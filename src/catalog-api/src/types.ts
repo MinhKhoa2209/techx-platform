@@ -13,4 +13,3 @@ export interface ErrorEnvelope {
     requestId: string;
   };
 }
-

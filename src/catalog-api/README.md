@@ -8,4 +8,3 @@ npm run test -w @techx/catalog-api
 ```
 
 Endpoints: `GET /healthz`, `GET /readyz`, `GET /api/products`, and `GET /api/products/{id}`.
-

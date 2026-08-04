@@ -1,5 +1,5 @@
-import { randomUUID } from 'node:crypto';
-import type { Order, OrderItem } from './types.js';
+import { randomUUID } from "node:crypto";
+import type { Order, OrderItem } from "./types.js";
 
 interface StoredOrder {
   order: Order;
@@ -13,9 +13,7 @@ interface IdempotencyRecord {
 }
 
 export type IdempotencyLookup =
-  | { kind: 'miss' }
-  | { kind: 'conflict' }
-  | { kind: 'hit'; order: Order };
+  { kind: "miss" } | { kind: "conflict" } | { kind: "hit"; order: Order };
 
 export class OrderStore {
   readonly #orders = new Map<string, StoredOrder>();
@@ -26,8 +24,10 @@ export class OrderStore {
     private readonly maxRecords: number,
     private readonly now: () => number = Date.now,
   ) {
-    if (!Number.isInteger(ttlMs) || ttlMs < 1_000) throw new Error('Order TTL must be at least one second.');
-    if (!Number.isInteger(maxRecords) || maxRecords < 1) throw new Error('Order max records must be positive.');
+    if (!Number.isInteger(ttlMs) || ttlMs < 1_000)
+      throw new Error("Order TTL must be at least one second.");
+    if (!Number.isInteger(maxRecords) || maxRecords < 1)
+      throw new Error("Order max records must be positive.");
   }
 
   get size(): number {
@@ -43,17 +43,21 @@ export class OrderStore {
   lookupIdempotency(key: string, payloadHash: string): IdempotencyLookup {
     this.#prune();
     const record = this.#idempotency.get(key);
-    if (!record) return { kind: 'miss' };
-    if (record.payloadHash !== payloadHash) return { kind: 'conflict' };
+    if (!record) return { kind: "miss" };
+    if (record.payloadHash !== payloadHash) return { kind: "conflict" };
     const order = this.#orders.get(record.orderId)?.order;
     if (!order) {
       this.#idempotency.delete(key);
-      return { kind: 'miss' };
+      return { kind: "miss" };
     }
-    return { kind: 'hit', order };
+    return { kind: "hit", order };
   }
 
-  create(items: OrderItem[], idempotencyKey: string, payloadHash: string): Order {
+  create(
+    items: OrderItem[],
+    idempotencyKey: string,
+    payloadHash: string,
+  ): Order {
     this.#prune();
     while (this.#orders.size >= this.maxRecords) this.#evictOldest();
 
@@ -68,7 +72,11 @@ export class OrderStore {
     };
 
     this.#orders.set(order.id, { order, expiresAtMs });
-    this.#idempotency.set(idempotencyKey, { payloadHash, orderId: order.id, expiresAtMs });
+    this.#idempotency.set(idempotencyKey, {
+      payloadHash,
+      orderId: order.id,
+      expiresAtMs,
+    });
     return order;
   }
 
@@ -78,7 +86,8 @@ export class OrderStore {
       if (record.expiresAtMs <= now) this.#orders.delete(id);
     }
     for (const [key, record] of this.#idempotency) {
-      if (record.expiresAtMs <= now || !this.#orders.has(record.orderId)) this.#idempotency.delete(key);
+      if (record.expiresAtMs <= now || !this.#orders.has(record.orderId))
+        this.#idempotency.delete(key);
     }
   }
 
@@ -91,4 +100,3 @@ export class OrderStore {
     }
   }
 }
-
