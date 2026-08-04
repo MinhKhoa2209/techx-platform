@@ -1,0 +1,25 @@
+{
+  "name": "techx-platform",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "workspaces": [
+    "src/catalog-api",
+    "src/order-api",
+    "src/frontend"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "check": "npm run check --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:backend": "npm run test -w @techx/catalog-api && npm run test -w @techx/order-api"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.1",
+    "tsx": "4.23.5",
+    "typescript": "5.9.3"
+  }
+}
+

@@ -1,0 +1,45 @@
+[
+  {
+    "id": "nova-refractor",
+    "name": "Nova Refractor Telescope",
+    "description": "A compact beginner telescope for crisp lunar and planetary views.",
+    "priceCents": 12900,
+    "image": "/products/nova-refractor.svg"
+  },
+  {
+    "id": "trail-binoculars",
+    "name": "Trail 8x42 Binoculars",
+    "description": "Weather-resistant binoculars with a bright, wide field of view.",
+    "priceCents": 8900,
+    "image": "/products/trail-binoculars.svg"
+  },
+  {
+    "id": "lunar-filter",
+    "name": "Lunar Contrast Filter",
+    "description": "Reduces glare and reveals more detail along the lunar terminator.",
+    "priceCents": 2400,
+    "image": "/products/lunar-filter.svg"
+  },
+  {
+    "id": "red-observer-light",
+    "name": "Red Observer Light",
+    "description": "A dimmable red torch that helps preserve night vision outdoors.",
+    "priceCents": 1800,
+    "image": "/products/red-observer-light.svg"
+  },
+  {
+    "id": "sky-atlas",
+    "name": "Pocket Sky Atlas",
+    "description": "A field-friendly guide to constellations and deep-sky targets.",
+    "priceCents": 3200,
+    "image": "/products/sky-atlas.svg"
+  },
+  {
+    "id": "lens-care-kit",
+    "name": "Optics Care Kit",
+    "description": "Brush, blower and microfiber tools for safe lens maintenance.",
+    "priceCents": 2100,
+    "image": "/products/lens-care-kit.svg"
+  }
+]
+
