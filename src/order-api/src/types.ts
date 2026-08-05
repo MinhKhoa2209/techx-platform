@@ -20,6 +20,8 @@ export interface OrderItem extends OrderItemInput {
 export interface Order {
   id: string;
   items: OrderItem[];
+  subtotalCents: number;
+  shippingCents: number;
   totalCents: number;
   createdAt: string;
   expiresAt: string;

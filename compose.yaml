@@ -1,0 +1,112 @@
+name: techx-platform
+
+x-runtime: &runtime
+  init: true
+  restart: "no"
+  read_only: true
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,size=32m
+  networks:
+    - internal
+
+services:
+  catalog-api:
+    <<: *runtime
+    image: techx/catalog:${IMAGE_TAG:-local}
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: src/catalog-api/Dockerfile
+    environment:
+      CATALOG_PORT: "3001"
+    expose:
+      - "3001"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/readyz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 3s
+      timeout: 2s
+      retries: 15
+      start_period: 3s
+
+  order-api:
+    <<: *runtime
+    image: techx/order:${IMAGE_TAG:-local}
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: src/order-api/Dockerfile
+    environment:
+      ORDER_PORT: "3002"
+      CATALOG_API_URL: http://catalog-api:3001
+      ORDER_API_KEY: ${ORDER_API_KEY:?Set ORDER_API_KEY in .env}
+      ORDER_STORE_TTL_MS: ${ORDER_STORE_TTL_MS:-3600000}
+      ORDER_STORE_MAX_RECORDS: ${ORDER_STORE_MAX_RECORDS:-1000}
+    expose:
+      - "3002"
+    depends_on:
+      catalog-api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3002/readyz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 3s
+      timeout: 2s
+      retries: 15
+      start_period: 3s
+
+  frontend:
+    <<: *runtime
+    image: techx/frontend:${IMAGE_TAG:-local}
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: src/frontend/Dockerfile
+    environment:
+      CATALOG_API_URL: http://catalog-api:3001
+      ORDER_API_URL: http://order-api:3002
+      ORDER_API_KEY: ${ORDER_API_KEY:?Set ORDER_API_KEY in .env}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    networks:
+      - internal
+      - edge
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+      - /app/src/frontend/.next/cache:rw,noexec,nosuid,size=32m,uid=10000,gid=10000
+    depends_on:
+      catalog-api:
+        condition: service_healthy
+      order-api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/readyz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 3s
+      timeout: 2s
+      retries: 20
+      start_period: 5s
+
+networks:
+  internal:
+    internal: true
+  edge: {}

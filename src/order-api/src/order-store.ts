@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 import type { Order, OrderItem } from "./types.js";
 
+const FREE_SHIPPING_THRESHOLD_CENTS = 5_000;
+const STANDARD_SHIPPING_CENTS = 999;
+
 interface StoredOrder {
   order: Order;
   expiresAtMs: number;
@@ -63,10 +66,20 @@ export class OrderStore {
 
     const createdAtMs = this.now();
     const expiresAtMs = createdAtMs + this.ttlMs;
+    const subtotalCents = items.reduce(
+      (sum, item) => sum + item.lineTotalCents,
+      0,
+    );
+    const shippingCents =
+      subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS
+        ? 0
+        : STANDARD_SHIPPING_CENTS;
     const order: Order = {
       id: `ord_${randomUUID()}`,
       items,
-      totalCents: items.reduce((sum, item) => sum + item.lineTotalCents, 0),
+      subtotalCents,
+      shippingCents,
+      totalCents: subtotalCents + shippingCents,
       createdAt: new Date(createdAtMs).toISOString(),
       expiresAt: new Date(expiresAtMs).toISOString(),
     };

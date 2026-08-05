@@ -4,7 +4,8 @@ Minimal internship storefront implementing the end-to-end flow:
 
 `browse products -> manage cart -> confirm order -> look up order`
 
-This repository contains three independently runnable Node.js/TypeScript services:
+This repository contains three independently runnable Node.js/TypeScript
+services:
 
 | Service       | Local port | Internal DNS       | Public exposure                      |
 | ------------- | ---------: | ------------------ | ------------------------------------ |
@@ -14,16 +15,28 @@ This repository contains three independently runnable Node.js/TypeScript service
 
 ## Shared deployment contract
 
-| Item               | Value                                                                    |
-| ------------------ | ------------------------------------------------------------------------ |
-| Namespace          | `techx-demo`                                                             |
-| Secret / key       | `techx-demo-secrets` / `order-api-key`                                   |
-| Health / readiness | `GET /healthz` / `GET /readyz`                                           |
-| Frontend image     | `058114477594.dkr.ecr.us-east-1.amazonaws.com/techx/frontend:demo-<sha>` |
-| Catalog image      | `058114477594.dkr.ecr.us-east-1.amazonaws.com/techx/catalog:demo-<sha>`  |
-| Order image        | `058114477594.dkr.ecr.us-east-1.amazonaws.com/techx/order:demo-<sha>`    |
+This table is the handoff contract copied verbatim across `techx-platform`,
+`techx-chart`, and `techx-infra`. Contract changes must update all three
+copies, every affected consumer, and the corresponding tests in one coordinated
+change.
 
-The browser talks only to same-origin frontend routes. `ORDER_API_KEY` remains server-side and is added by the frontend BFF when it calls Order API.
+| Contract item        | Locked value                                                                                                                                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| AWS region           | `us-east-1`                                                                                                                                                                                      |
+| Kubernetes namespace | `techx-demo`                                                                                                                                                                                     |
+| Services / ports     | `frontend:3000`, `catalog-api:3001`, `order-api:3002`                                                                                                                                            |
+| Cluster DNS          | `frontend.techx-demo.svc.cluster.local:3000`, `catalog-api.techx-demo.svc.cluster.local:3001`, `order-api.techx-demo.svc.cluster.local:3002`                                                     |
+| Secret / key         | Secret `techx-demo-secrets`, data key `order-api-key`; injected as `ORDER_API_KEY` only into frontend and Order                                                                                  |
+| Runtime environment  | Frontend: `CATALOG_API_URL`, `ORDER_API_URL`, `ORDER_API_KEY`; Catalog: `CATALOG_PORT`; Order: `ORDER_PORT`, `CATALOG_API_URL`, `ORDER_API_KEY`, `ORDER_STORE_TTL_MS`, `ORDER_STORE_MAX_RECORDS` |
+| Health / readiness   | Every service exposes unauthenticated `GET /healthz` and `GET /readyz`                                                                                                                           |
+| Order store          | In-memory, TTL `3600000` ms, maximum `1000` records; restart intentionally loses orders and idempotency records                                                                                  |
+| Pricing              | Catalog price snapshot; shipping `999` cents below subtotal `5000`, otherwise free; `totalCents = subtotalCents + shippingCents`                                                                 |
+| Images               | `058114477594.dkr.ecr.us-east-1.amazonaws.com/techx/frontend:demo-{short-sha}`, `.../techx/catalog:demo-{short-sha}`, `.../techx/order:demo-{short-sha}`                                         |
+| Exposure             | Exactly one temporary public HTTP ALB routes to frontend/BFF; Catalog, Order, Argo CD, and any administrative UI remain private `ClusterIP` services                                             |
+| Public URL           | `http://{alb-dns-name}/`; no custom domain and no public observability URL                                                                                                                       |
+
+The browser talks only to same-origin frontend routes. `ORDER_API_KEY` remains
+server-side and is added by the frontend BFF when it calls Order API.
 
 ## API contract
 
@@ -32,7 +45,22 @@ The browser talks only to same-origin frontend routes. `ORDER_API_KEY` remains s
 - `POST /api/orders` with `{ "items": [{ "productId": string, "quantity": integer }] }`
 - `GET /api/orders/{id}`
 
-Order endpoints require `X-Demo-Key`. Create-order also requires `Idempotency-Key`. Errors use:
+Products return `{ "products": Product[] }` or `{ "product": Product }`.
+Order creation accepts 1–20 input rows, trims product IDs, merges duplicate IDs,
+and rejects a merged quantity above 99. Product validation is atomic: any
+invalid product rejects the entire order. The authoritative Catalog price is
+snapshotted into each order item. Standard shipping is `999` cents below the
+`5000`-cent free-shipping threshold; the order response locks
+`subtotalCents`, `shippingCents`, and `totalCents`. The demo does not process
+the pre-filled payment fields.
+
+Order endpoints require `X-Demo-Key`. Create-order also requires an
+`Idempotency-Key` of 8–128 characters. Repeating the same key and normalized
+payload returns the original order; using the key with a different payload
+returns `409`. Orders and idempotency records expire together after the
+configured TTL and are intentionally lost when the Order process/pod restarts.
+
+Errors use:
 
 ```json
 {
@@ -44,20 +72,40 @@ Order endpoints require `X-Demo-Key`. Create-order also requires `Idempotency-Ke
 }
 ```
 
-## Topology
+| Endpoint / condition                                                    | Status |
+| ----------------------------------------------------------------------- | -----: |
+| Successful list, lookup, health, readiness, or idempotent replay        |  `200` |
+| Newly created order                                                     |  `201` |
+| Invalid ID/body/content type/product/quantity/idempotency key           |  `400` |
+| Missing or invalid `X-Demo-Key` on Order API                            |  `401` |
+| Product, order, or route not found                                      |  `404` |
+| Unsupported method                                                      |  `405` |
+| Reused idempotency key with a different payload                         |  `409` |
+| Frontend create-order rate limit exceeded                               |  `429` |
+| Catalog dependency, upstream, or required BFF configuration unavailable |  `503` |
+
+## Topology and UI contract
 
 ```mermaid
 flowchart LR
-  User --> ALB[Public ALB]
+  User --> ALB[Public HTTP ALB]
   ALB --> Frontend[Next.js frontend/BFF]
-  Frontend --> Catalog[Catalog API]
-  Frontend --> Order[Order API]
+  Frontend --> Catalog[Catalog API ClusterIP]
+  Frontend --> Order[Order API ClusterIP]
   Order --> Catalog
+  Admin[Operator] -. private port-forward .-> Argo[Argo CD ClusterIP]
 ```
+
+`PLAN_UI.md` is the locked responsive wireframe for mobile (up to 768 px),
+tablet (769–1023 px), desktop (1024 px and above), and wide desktop (1280 px
+and above). Each data page defines loading, empty/not-found, error/retry, and
+success states. It does not add a public endpoint or change the API contract.
 
 ## Development
 
-Install dependencies once, then run the three processes in separate PowerShell terminals. The demo key below is local-only and must match between Order API and the frontend BFF.
+Install dependencies once, then run the three processes in separate PowerShell
+terminals. The demo key below is local-only and must match between Order API and
+the frontend BFF.
 
 ```powershell
 npm ci
@@ -76,18 +124,48 @@ $env:ORDER_API_KEY='local-demo-key'
 npm run dev -w @techx/frontend
 ```
 
-Open `http://localhost:3000`. No AWS resources are required for this workflow. Before any later AWS apply, the repository must pass the local verification gate:
+Open `http://localhost:3000`. No AWS resources are required for this workflow.
+Before any later AWS apply, the repository must pass the local verification
+gate:
 
 ```powershell
 ./scripts/verify.ps1
 ```
 
-That gate checks tracked-file hygiene, TypeScript, all backend/frontend/BFF integration tests, and production builds.
+Developer quality commands are `npm run format`, `npm run format:check`,
+`npm run lint`, `npm run check`, and `npm test`.
 
-Developer quality commands are `npm run format`, `npm run format:check`, `npm run lint`, `npm run check`, and `npm test`.
+## Container and local end-to-end gate
+
+Docker Compose publishes only the frontend on `http://localhost:3000`; the two
+backend services stay on the internal Compose network. All three images target
+`linux/amd64`, run with a numeric non-root UID, drop Linux capabilities, use a
+read-only root filesystem, and receive only bounded writable `tmpfs` mounts.
+
+```powershell
+Copy-Item .env.example .env
+# Replace ORDER_API_KEY in .env with a random local value of at least 8 characters.
+$env:IMAGE_TAG='local'
+docker compose config --quiet
+docker compose build --pull
+docker compose up -d --wait
+./scripts/container-smoke.ps1
+./scripts/container-recovery.ps1
+./scripts/container-soak.ps1 -DurationSeconds 60 -BurstRequests 30
+./scripts/container-audit.ps1
+docker compose down --volumes --remove-orphans
+```
+
+The recovery check restarts Catalog, Order, and frontend one at a time and
+verifies that unrelated containers do not restart. The soak gate accepts `429`
+only during its intentional create-order burst. Order data loss after restarting
+Order is the documented in-memory-store limitation, not a recovery failure.
+None of these commands contacts AWS or creates a billable cloud resource.
 
 ## Attribution
 
-The visual direction and sample commerce-domain patterns are adapted selectively from the TechX/OpenTelemetry demo sources. New implementation code in this repository is intentionally reduced to the internship thin slice.
+The visual direction and sample commerce-domain patterns are adapted selectively
+from the TechX/OpenTelemetry demo sources. New implementation code in this
+repository is intentionally reduced to the internship thin slice.
 
 Licensed under Apache-2.0. See [LICENSE](LICENSE).

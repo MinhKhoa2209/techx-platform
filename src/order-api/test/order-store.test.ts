@@ -31,3 +31,21 @@ test("evicts the oldest order when capacity is reached", () => {
   assert.equal(store.find(first.id), undefined);
   assert.equal(store.find(second.id)?.id, second.id);
 });
+
+test("locks standard or free shipping into the order total", () => {
+  const store = new OrderStore(60_000, 10);
+  const standard = store.create([item], "standard-key", "standard-hash");
+  assert.equal(standard.subtotalCents, 500);
+  assert.equal(standard.shippingCents, 999);
+  assert.equal(standard.totalCents, 1_499);
+
+  const freeShippingItem = {
+    ...item,
+    unitPriceCents: 5_000,
+    lineTotalCents: 5_000,
+  };
+  const free = store.create([freeShippingItem], "free-key", "free-hash");
+  assert.equal(free.subtotalCents, 5_000);
+  assert.equal(free.shippingCents, 0);
+  assert.equal(free.totalCents, 5_000);
+});

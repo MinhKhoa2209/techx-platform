@@ -1,0 +1,9 @@
+.git
+.github
+.env
+**/.next
+**/dist
+**/node_modules
+**/coverage
+**/*.log
+PLAN_UI.md

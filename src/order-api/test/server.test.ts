@@ -133,6 +133,8 @@ test("creates an atomic multi-item order and merges duplicate items", async () =
     order: {
       id: string;
       items: Array<{ productId: string; quantity: number }>;
+      subtotalCents: number;
+      shippingCents: number;
       totalCents: number;
     };
   };
@@ -148,7 +150,9 @@ test("creates an atomic multi-item order and merges duplicate items", async () =
       { productId: "product-2", quantity: 1 },
     ],
   );
-  assert.equal(body.order.totalCents, 2_200);
+  assert.equal(body.order.subtotalCents, 2_200);
+  assert.equal(body.order.shippingCents, 999);
+  assert.equal(body.order.totalCents, 3_199);
 
   const lookup = await fetch(`${orderBaseUrl}/api/orders/${body.order.id}`, {
     headers: { "x-demo-key": API_KEY },

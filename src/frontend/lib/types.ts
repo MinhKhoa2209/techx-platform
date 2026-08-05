@@ -22,6 +22,8 @@ export interface OrderItem {
 export interface Order {
   id: string;
   items: OrderItem[];
+  subtotalCents: number;
+  shippingCents: number;
   totalCents: number;
   createdAt: string;
   expiresAt: string;
