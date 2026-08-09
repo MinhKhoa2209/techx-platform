@@ -42,17 +42,24 @@ server-side and is added by the frontend BFF when it calls Order API.
 
 - `GET /api/products`
 - `GET /api/products/{id}`
-- `POST /api/orders` with `{ "items": [{ "productId": string, "quantity": integer }] }`
+- `GET /api/store-config`
+- `POST /api/orders` with items, customer, US demo shipping address, and `shippingMethod: "standard"`
 - `GET /api/orders/{id}`
 
-Products return `{ "products": Product[] }` or `{ "product": Product }`.
-Order creation accepts 1–20 input rows, trims product IDs, merges duplicate IDs,
-and rejects a merged quantity above 99. Product validation is atomic: any
-invalid product rejects the entire order. The authoritative Catalog price is
-snapshotted into each order item. Standard shipping is `999` cents below the
-`5000`-cent free-shipping threshold; the order response locks
-`subtotalCents`, `shippingCents`, and `totalCents`. The demo does not process
-the pre-filled payment fields.
+The product list returns `{ "products": Product[], "categories":
+CatalogCategory[] }`; category counts are derived by Catalog rather than
+hard-coded in the UI. Product v2 includes SKU, explicit category, descriptions,
+price/optional compare-at price, currency, availability, bounded inventory,
+featured flag, tags, specifications, and local image metadata. Catalog validates
+all seed records on startup and fails fast on an invalid or duplicate record.
+
+Order creation accepts 1–20 item rows plus validated contact and US demo address
+data. It trims product IDs, merges duplicates, enforces current catalog inventory,
+and rejects an unavailable product atomically. Catalog price, SKU, name, and image
+are snapshotted into each order item. Order owns shipping rules and exposes them
+through `GET /api/store-config`; the response locks subtotal, shipping, total,
+status, and estimated demo delivery dates. Only masked email and coarse destination
+data are retained. The frontend never requests or processes card details.
 
 Order endpoints require `X-Demo-Key`. Create-order also requires an
 `Idempotency-Key` of 8–128 characters. Repeating the same key and normalized
@@ -96,10 +103,11 @@ flowchart LR
   Admin[Operator] -. private port-forward .-> Argo[Argo CD ClusterIP]
 ```
 
-`PLAN_UI.md` is the locked responsive wireframe for mobile (up to 768 px),
-tablet (769–1023 px), desktop (1024 px and above), and wide desktop (1280 px
-and above). Each data page defines loading, empty/not-found, error/retry, and
-success states. It does not add a public endpoint or change the API contract.
+`PLAN_UI.md` records the implemented ecommerce upgrade and its local acceptance
+gates. UI domain data comes from typed API contracts; navigation/content and
+design tokens have one centralized owner. `scripts/ui-hardcode-audit.ps1` fails
+verification when a component embeds catalog fixtures, product-specific values,
+inline styles, direct route literals, or unsupported storefront claims.
 
 ## Development
 

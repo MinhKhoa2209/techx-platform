@@ -1,26 +1,30 @@
 "use client";
 
+import { CONTENT } from "@/lib/site-config";
+
 interface QuantityStepperProps {
   value: number;
   onChange: (newValue: number) => void;
-  min?: number;
-  max?: number;
+  min: number;
+  max: number;
+  label?: string;
 }
 
 export default function QuantityStepper({
   value,
   onChange,
-  min = 1,
-  max = 99,
+  min,
+  max,
+  label = CONTENT.common.quantity,
 }: QuantityStepperProps) {
   return (
-    <div className="qty-stepper" role="group" aria-label="Quantity">
+    <div className="qty-stepper" role="group" aria-label={label}>
       <button
         className="qty-btn"
         type="button"
         onClick={() => onChange(Math.max(min, value - 1))}
         disabled={value <= min}
-        aria-label="Decrease quantity"
+        aria-label={CONTENT.common.decreaseQuantity}
       >
         −
       </button>
@@ -32,7 +36,7 @@ export default function QuantityStepper({
         type="button"
         onClick={() => onChange(Math.min(max, value + 1))}
         disabled={value >= max}
-        aria-label="Increase quantity"
+        aria-label={CONTENT.common.increaseQuantity}
       >
         +
       </button>

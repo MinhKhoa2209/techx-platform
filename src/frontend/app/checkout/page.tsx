@@ -1,384 +1,215 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCart } from "@/lib/CartContext";
 import CartSummary from "@/components/cart/CartSummary";
 import EmptyState from "@/components/ui/EmptyState";
-import type { Order } from "@/lib/types";
-
-interface FormData {
-  email: string;
-  name: string;
-  address: string;
-  city: string;
-  state: string;
-  zip: string;
-  country: string;
-  cardNumber: string;
-  expMonth: string;
-  expYear: string;
-  cvv: string;
-}
-
-const INITIAL_FORM: FormData = {
-  email: "demo@techx.store",
-  name: "Demo User",
-  address: "1600 Amphitheatre Pkwy",
-  city: "Mountain View",
-  state: "CA",
-  zip: "94043",
-  country: "US",
-  cardNumber: "4111 1111 1111 1111",
-  expMonth: "12",
-  expYear: "2028",
-  cvv: "123",
-};
+import Icon from "@/components/ui/Icon";
+import { ApiClientError, createOrder } from "@/lib/api-client";
+import {
+  createOrderInput,
+  EMPTY_CHECKOUT_FORM,
+  validateCheckout,
+  type CheckoutErrors,
+  type CheckoutField,
+  type CheckoutForm,
+} from "@/lib/checkout";
+import { hasUnavailableItems } from "@/lib/cart";
+import { useCart } from "@/lib/CartContext";
+import {
+  CHECKOUT_FIELDS,
+  CHECKOUT_FIELD_GROUPS,
+  CONTENT,
+  ORDER_ERROR_CONTENT,
+  ROUTES,
+  UI_STORAGE_KEYS,
+  UI_LIMITS,
+} from "@/lib/site-config";
+import { useStorefront } from "@/lib/StorefrontContext";
 
 export default function CheckoutPage() {
-  const { items, clearCart, ready } = useCart();
   const router = useRouter();
-  const [form, setForm] = useState<FormData>(INITIAL_FORM);
+  const { items, ready, clearCart } = useCart();
+  const { config } = useStorefront();
+  const [form, setForm] = useState<CheckoutForm>(EMPTY_CHECKOUT_FORM);
+  const [errors, setErrors] = useState<CheckoutErrors>({});
+  const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const attempt = useRef<{ fingerprint: string; key: string } | null>(null);
 
-  if (!ready) {
+  if (!ready)
     return (
-      <div
-        className="checkout-page"
-        aria-busy="true"
-        aria-label="Loading checkout"
-      >
-        <div className="checkout-form-card">
-          <div className="skeleton-line w-1-2 h-8" />
-          <div className="skeleton-line w-full" />
-          <div className="skeleton-line w-full" />
-        </div>
+      <div className="page-loading" aria-busy="true">
+        {CONTENT.common.loading}
       </div>
     );
-  }
-
   if (items.length === 0) {
     return (
-      <div className="checkout-page">
+      <div className="section-shell">
         <EmptyState
-          icon="🛝"
-          title="Nothing to checkout"
-          description="Your cart is empty. Add some products before checking out."
-          actionLabel="Browse Products"
-          actionHref="/products"
+          icon="cart"
+          title={CONTENT.checkout.emptyTitle}
+          description={CONTENT.cart.emptyBody}
+          actionLabel={CONTENT.common.shopNow}
+          actionHref={ROUTES.products}
         />
       </div>
     );
   }
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const { name, value } = e.target;
-    const normalizedValue =
-      name === "cardNumber"
-        ? value
-            .replace(/\D/g, "")
-            .slice(0, 16)
-            .replace(/(.{4})/g, "$1 ")
-            .trim()
+  function updateField(field: CheckoutField, value: string) {
+    const normalized =
+      field === "region"
+        ? value.slice(0, UI_LIMITS.regionCharacters).toUpperCase()
         : value;
-    setForm((prev) => ({ ...prev, [name]: normalizedValue }));
+    setForm((current) => ({ ...current, [field]: normalized }));
+    setErrors((current) => ({ ...current, [field]: undefined }));
+    setSubmitError("");
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (submitting) return;
+  function renderField(field: CheckoutField) {
+    const definition = CHECKOUT_FIELDS[field];
+    const error = errors[field];
+    return (
+      <div className={`form-field field-${field}`} key={field}>
+        <label htmlFor={field}>{definition.label}</label>
+        <input
+          id={field}
+          name={field}
+          type={field === "email" ? "email" : "text"}
+          autoComplete={definition.autoComplete}
+          inputMode={definition.inputMode}
+          placeholder={definition.placeholder}
+          value={form[field]}
+          onChange={(event) => updateField(field, event.target.value)}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${field}-error` : undefined}
+          maxLength={
+            field === "line2" ? UI_LIMITS.optionalAddressCharacters : undefined
+          }
+        />
+        {error && (
+          <span id={`${field}-error`} className="field-error">
+            {error}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (submitting || !config || hasUnavailableItems(items)) return;
+    const nextErrors = validateCheckout(form);
+    setErrors(nextErrors);
+    const firstError = Object.keys(nextErrors)[0] as CheckoutField | undefined;
+    if (firstError) {
+      document.getElementById(firstError)?.focus();
+      return;
+    }
+
+    const input = createOrderInput(form, items);
+    const fingerprint = JSON.stringify(input);
+    if (!attempt.current || attempt.current.fingerprint !== fingerprint) {
+      attempt.current = { fingerprint, key: crypto.randomUUID() };
+    }
     setSubmitting(true);
-    setError("");
+    setSubmitError("");
     try {
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "idempotency-key": crypto.randomUUID(),
-        },
-        body: JSON.stringify({
-          items: items.map((i) => ({
-            productId: i.product.id,
-            quantity: i.quantity,
-          })),
-        }),
-      });
-      const body = (await res.json()) as {
-        order?: Order;
-        error?: { message: string };
-      };
-      if (!res.ok)
-        throw new Error(body.error?.message ?? `Error ${res.status}`);
-      const orderId = body.order?.id;
-      if (!orderId) throw new Error("Invalid response from order service.");
+      const { order } = await createOrder(input, attempt.current.key);
       window.sessionStorage.setItem(
-        "techx-last-order",
-        JSON.stringify(body.order),
+        UI_STORAGE_KEYS.lastOrder,
+        JSON.stringify(order),
       );
       clearCart();
-      router.push(`/order/${orderId}`);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Could not place order. Please try again.",
+      router.push(ROUTES.order(order.id));
+    } catch (error) {
+      const code =
+        error instanceof ApiClientError ? error.code : "UNEXPECTED_ERROR";
+      setSubmitError(
+        ORDER_ERROR_CONTENT[code] ??
+          (error instanceof Error
+            ? error.message
+            : CONTENT.checkout.fallbackError),
       );
       setSubmitting(false);
     }
   }
 
-  const cardType = form.cardNumber.replace(/\D/g, "").startsWith("4")
-    ? "VISA"
-    : /^5[1-5]/.test(form.cardNumber.replace(/\D/g, ""))
-      ? "Mastercard"
-      : "Card";
-
   return (
-    <div className="checkout-page">
-      {/* Progress Steps */}
-      <div className="progress-steps" aria-label="Checkout progress">
-        <div className="progress-step done">
-          <span className="progress-step-num">✓</span>
-          <span className="progress-step-label">Cart</span>
-        </div>
-        <div className="progress-connector done" />
-        <div className="progress-step active">
-          <span className="progress-step-num">2</span>
-          <span className="progress-step-label">Checkout</span>
-        </div>
-        <div className="progress-connector" />
-        <div className="progress-step">
-          <span className="progress-step-num">3</span>
-          <span className="progress-step-label">Confirmation</span>
-        </div>
-      </div>
-
+    <div className="checkout-page section-shell">
+      <nav className="breadcrumbs" aria-label={CONTENT.common.breadcrumb}>
+        <Link href={ROUTES.home}>{CONTENT.common.home}</Link>
+        <span>/</span>
+        <Link href={ROUTES.cart}>{CONTENT.cart.title}</Link>
+        <span>/</span>
+        <span aria-current="page">{CONTENT.checkout.title}</span>
+      </nav>
+      <header className="page-heading">
+        <p className="eyebrow">{CONTENT.checkout.eyebrow}</p>
+        <h1>{CONTENT.checkout.title}</h1>
+        <p>{CONTENT.checkout.demoPaymentBody}</p>
+      </header>
       <div className="checkout-layout">
-        {/* Form */}
-        <div className="checkout-form-card">
-          <form onSubmit={handleSubmit} noValidate>
-            {/* Contact */}
-            <div className="form-section">
-              <h2 className="form-section-title">Contact Information</h2>
-              <div className="form-group">
-                <label className="form-label" htmlFor="email">
-                  Email Address
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  className="form-input"
-                  value={form.email}
-                  onChange={handleChange}
-                  required
-                />
+        <form className="checkout-form" onSubmit={submit} noValidate>
+          <section aria-labelledby="contact-heading">
+            <div className="form-section-heading">
+              <span>1</span>
+              <h2 id="contact-heading">{CONTENT.checkout.contact}</h2>
+            </div>
+            <div className="form-grid">
+              {CHECKOUT_FIELD_GROUPS.contact.map(renderField)}
+            </div>
+          </section>
+          <section aria-labelledby="shipping-heading">
+            <div className="form-section-heading">
+              <span>2</span>
+              <h2 id="shipping-heading">{CONTENT.checkout.shipping}</h2>
+            </div>
+            <div className="form-grid address-grid">
+              {CHECKOUT_FIELD_GROUPS.address.map(renderField)}
+              <div className="form-field country-field">
+                <label>{CONTENT.checkout.country}</label>
+                <input value={CONTENT.checkout.countryValue} disabled />
               </div>
             </div>
-
-            {/* Shipping */}
-            <div className="form-section">
-              <h2 className="form-section-title">Shipping Address</h2>
-              <div
-                style={{ display: "flex", flexDirection: "column", gap: 16 }}
-              >
-                <div className="form-group">
-                  <label className="form-label" htmlFor="name">
-                    Full Name
-                  </label>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    className="form-input"
-                    value={form.name}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="address">
-                    Street Address
-                  </label>
-                  <input
-                    id="address"
-                    name="address"
-                    type="text"
-                    className="form-input"
-                    value={form.address}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="city">
-                      City
-                    </label>
-                    <input
-                      id="city"
-                      name="city"
-                      type="text"
-                      className="form-input"
-                      value={form.city}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="state">
-                      State
-                    </label>
-                    <input
-                      id="state"
-                      name="state"
-                      type="text"
-                      className="form-input"
-                      value={form.state}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="zip">
-                      ZIP Code
-                    </label>
-                    <input
-                      id="zip"
-                      name="zip"
-                      type="text"
-                      className="form-input"
-                      value={form.zip}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="country">
-                      Country
-                    </label>
-                    <input
-                      id="country"
-                      name="country"
-                      type="text"
-                      className="form-input"
-                      value={form.country}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
+          </section>
+          <section className="demo-payment" aria-labelledby="payment-heading">
+            <Icon name="shield" size={26} />
+            <div>
+              <h2 id="payment-heading">{CONTENT.checkout.demoPaymentTitle}</h2>
+              <p>{CONTENT.checkout.demoPaymentBody}</p>
             </div>
-
-            {/* Payment */}
-            <div className="form-section">
-              <h2 className="form-section-title">Payment Details</h2>
-              <div
-                style={{ display: "flex", flexDirection: "column", gap: 16 }}
-              >
-                <div className="form-group">
-                  <label className="form-label" htmlFor="cardNumber">
-                    Card Number
-                  </label>
-                  <input
-                    id="cardNumber"
-                    name="cardNumber"
-                    type="text"
-                    className="form-input"
-                    value={form.cardNumber}
-                    onChange={handleChange}
-                    maxLength={19}
-                    placeholder="XXXX XXXX XXXX XXXX"
-                    required
-                  />
-                  <span className="form-hint" aria-live="polite">
-                    Detected: {cardType}
-                  </span>
-                </div>
-                <div className="form-row-3">
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="expMonth">
-                      Expiry Month
-                    </label>
-                    <input
-                      id="expMonth"
-                      name="expMonth"
-                      type="text"
-                      className="form-input"
-                      value={form.expMonth}
-                      onChange={handleChange}
-                      placeholder="MM"
-                      maxLength={2}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="expYear">
-                      Expiry Year
-                    </label>
-                    <input
-                      id="expYear"
-                      name="expYear"
-                      type="text"
-                      className="form-input"
-                      value={form.expYear}
-                      onChange={handleChange}
-                      placeholder="YYYY"
-                      maxLength={4}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="cvv">
-                      CVV
-                    </label>
-                    <input
-                      id="cvv"
-                      name="cvv"
-                      type="text"
-                      className="form-input"
-                      value={form.cvv}
-                      onChange={handleChange}
-                      placeholder="123"
-                      maxLength={4}
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
+          </section>
+          {submitError && (
+            <div className="inline-error" role="alert">
+              <h2>{CONTENT.checkout.submitErrorTitle}</h2>
+              <p>
+                {submitError} {CONTENT.checkout.submitErrorSuffix}
+              </p>
             </div>
-
-            {error && (
-              <div className="alert alert-error" role="alert">
-                <span>⚠️</span>
-                <div>
-                  <strong>Order failed</strong>
-                  <p>{error} Your cart is still here.</p>
-                </div>
-              </div>
-            )}
-
-            <div className="checkout-actions">
-              <Link href="/cart" className="btn btn-ghost">
-                ← Back to Cart
-              </Link>
-              <button
-                type="submit"
-                className="btn btn-primary btn-xl"
-                disabled={submitting}
-              >
-                {submitting ? "⏳ Placing order…" : "🔒 Place Order"}
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Summary */}
+          )}
+          <div className="checkout-actions">
+            <Link className="btn btn-secondary" href={ROUTES.cart}>
+              ← {CONTENT.checkout.back}
+            </Link>
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={submitting || !config || hasUnavailableItems(items)}
+            >
+              {submitting ? (
+                CONTENT.checkout.submitting
+              ) : (
+                <>
+                  <Icon name="shield" size={18} />
+                  {CONTENT.checkout.placeOrder}
+                </>
+              )}
+            </button>
+          </div>
+        </form>
         <CartSummary mode="checkout" />
       </div>
     </div>

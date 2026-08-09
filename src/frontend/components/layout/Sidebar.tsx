@@ -1,151 +1,174 @@
 "use client";
 
-interface Category {
-  label: string;
-  value: string;
-  count: number;
-  icon: string;
-}
-
-interface PriceRange {
-  label: string;
-  value: string;
-  min: number;
-  max: number;
-}
-
-const CATEGORIES: Category[] = [
-  { label: "All Products", value: "all", count: 6, icon: "🔭" },
-  { label: "Telescopes", value: "telescope", count: 2, icon: "🔭" },
-  { label: "Binoculars", value: "binocular", count: 1, icon: "👁" },
-  { label: "Filters", value: "filter", count: 1, icon: "🌈" },
-  { label: "Accessories", value: "accessories", count: 2, icon: "🧰" },
-];
-
-const PRICE_RANGES: PriceRange[] = [
-  { label: "Under $100", value: "under-100", min: 0, max: 10000 },
-  { label: "$100 – $300", value: "100-300", min: 10000, max: 30000 },
-  { label: "$300+", value: "300-plus", min: 30000, max: Infinity },
-];
+import { useRef } from "react";
+import Icon from "@/components/ui/Icon";
+import {
+  AVAILABILITY_CONTENT,
+  AVAILABILITY_FILTERS,
+  CATEGORY_PRESENTATION,
+  CONTENT,
+  PRICE_FILTERS,
+} from "@/lib/site-config";
+import type { PriceFilterId } from "@/lib/catalog";
+import type {
+  Availability,
+  CatalogCategory,
+  ProductCategory,
+} from "@/lib/types";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 interface SidebarProps {
-  selectedCategory: string;
-  selectedPrice: string;
-  onCategoryChange: (value: string) => void;
-  onPriceChange: (value: string) => void;
+  categories: CatalogCategory[];
+  selectedCategory: ProductCategory | "";
+  selectedPrice: PriceFilterId;
+  selectedAvailability: Availability | "";
+  onCategoryChange: (value: ProductCategory | "") => void;
+  onPriceChange: (value: PriceFilterId) => void;
+  onAvailabilityChange: (value: Availability | "") => void;
   onClear: () => void;
-  isOpen?: boolean;
-  onClose?: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export default function Sidebar({
-  selectedCategory,
-  selectedPrice,
-  onCategoryChange,
-  onPriceChange,
-  onClear,
-  isOpen = false,
-  onClose,
-}: SidebarProps) {
-  const hasFilters = selectedCategory !== "all" || selectedPrice !== "";
+export default function Sidebar(props: SidebarProps) {
+  const panelRef = useRef<HTMLElement>(null);
+  useFocusTrap(props.isOpen, panelRef, props.onClose);
+  const hasFilters = Boolean(
+    props.selectedCategory || props.selectedPrice || props.selectedAvailability,
+  );
 
   return (
     <>
-      {/* Mobile overlay */}
-      <div
-        className={`sidebar-overlay${isOpen ? " open" : ""}`}
-        onClick={onClose}
-        aria-hidden="true"
+      <button
+        type="button"
+        className={`filter-backdrop${props.isOpen ? " open" : ""}`}
+        onClick={props.onClose}
+        aria-label={CONTENT.catalog.closeProductFilters}
+        tabIndex={props.isOpen ? 0 : -1}
       />
-
       <aside
-        className={`sidebar${isOpen ? " mobile-open" : ""}`}
-        aria-label="Product filters"
+        ref={panelRef}
+        className={`filter-panel${props.isOpen ? " open" : ""}`}
+        aria-label={CONTENT.catalog.productFilters}
       >
-        <button
-          className="sidebar-close-btn"
-          type="button"
-          onClick={onClose}
-          aria-label="Close filters"
-        >
-          ×
-        </button>
-        {/* Categories */}
-        <div className="sidebar-section">
-          <p className="sidebar-section-title">Categories</p>
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.value}
-              className={`filter-option${selectedCategory === cat.value ? " active" : ""}`}
-              onClick={() => onCategoryChange(cat.value)}
-              type="button"
-            >
-              <span>{cat.icon}</span>
-              <span>{cat.label}</span>
-              <span className="filter-option-count">{cat.count}</span>
-            </button>
-          ))}
+        <div className="filter-panel-head">
+          <h2>{CONTENT.catalog.filters}</h2>
+          <button
+            className="icon-button filter-close"
+            type="button"
+            onClick={props.onClose}
+            aria-label={CONTENT.catalog.closeFilters}
+          >
+            <Icon name="close" />
+          </button>
         </div>
 
-        <div className="sidebar-divider" />
-
-        {/* Price Range */}
-        <div className="sidebar-section">
-          <p className="sidebar-section-title">Price Range</p>
-          {PRICE_RANGES.map((range) => (
+        <fieldset>
+          <legend>{CONTENT.catalog.categories}</legend>
+          <button
+            type="button"
+            className={
+              !props.selectedCategory ? "filter-option active" : "filter-option"
+            }
+            onClick={() => props.onCategoryChange("")}
+          >
+            <span>{CONTENT.catalog.allProducts}</span>
+            <span>
+              {props.categories.reduce(
+                (sum, category) => sum + category.count,
+                0,
+              )}
+            </span>
+          </button>
+          {props.categories.map((category) => (
             <button
-              key={range.value}
-              className={`filter-option${selectedPrice === range.value ? " active" : ""}`}
-              onClick={() =>
-                onPriceChange(selectedPrice === range.value ? "" : range.value)
+              type="button"
+              key={category.id}
+              className={
+                props.selectedCategory === category.id
+                  ? "filter-option active"
+                  : "filter-option"
               }
-              type="button"
+              onClick={() => props.onCategoryChange(category.id)}
             >
-              <span>{range.label}</span>
+              <span>
+                <Icon
+                  name={
+                    CATEGORY_PRESENTATION[category.id].icon as
+                      "scope" | "binoculars" | "accessories"
+                  }
+                  size={17}
+                />
+                {category.label}
+              </span>
+              <span>{category.count}</span>
             </button>
           ))}
-        </div>
+        </fieldset>
 
-        <div className="sidebar-divider" />
-
-        {/* Rating (visual only) */}
-        <div className="sidebar-section">
-          <p className="sidebar-section-title">Rating</p>
-          <div
-            style={{
-              padding: "8px 10px",
-              fontSize: "14px",
-              color: "var(--ink-2)",
-            }}
-          >
-            <span style={{ color: "var(--gold)" }}>★★★★★</span> &amp; up
-          </div>
-          <div
-            style={{
-              padding: "8px 10px",
-              fontSize: "14px",
-              color: "var(--ink-2)",
-            }}
-          >
-            <span style={{ color: "var(--gold)" }}>★★★★</span>☆ &amp; up
-          </div>
-        </div>
-
-        {hasFilters && (
-          <>
-            <div className="sidebar-divider" />
+        <fieldset>
+          <legend>{CONTENT.catalog.price}</legend>
+          {PRICE_FILTERS.map((price) => (
             <button
-              className="clear-filters-btn"
-              onClick={onClear}
               type="button"
+              key={price.id}
+              className={
+                props.selectedPrice === price.id
+                  ? "filter-option active"
+                  : "filter-option"
+              }
+              onClick={() =>
+                props.onPriceChange(
+                  props.selectedPrice === price.id ? "" : price.id,
+                )
+              }
             >
-              ✕ Clear All Filters
+              <span>{price.label}</span>
             </button>
-          </>
-        )}
+          ))}
+        </fieldset>
+
+        <fieldset>
+          <legend>{CONTENT.catalog.availability}</legend>
+          {AVAILABILITY_FILTERS.map((value) => (
+            <button
+              type="button"
+              key={value}
+              className={
+                props.selectedAvailability === value
+                  ? "filter-option active"
+                  : "filter-option"
+              }
+              onClick={() =>
+                props.onAvailabilityChange(
+                  props.selectedAvailability === value ? "" : value,
+                )
+              }
+            >
+              <span>{AVAILABILITY_CONTENT[value].label}</span>
+            </button>
+          ))}
+        </fieldset>
+
+        <div className="filter-panel-actions">
+          {hasFilters && (
+            <button
+              type="button"
+              className="text-button"
+              onClick={props.onClear}
+            >
+              {CONTENT.catalog.clear}
+            </button>
+          )}
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={props.onClose}
+          >
+            {CONTENT.catalog.applyFilters}
+          </button>
+        </div>
       </aside>
     </>
   );
 }
-
-export { PRICE_RANGES };

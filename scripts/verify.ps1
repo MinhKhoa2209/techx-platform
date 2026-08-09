@@ -32,6 +32,8 @@ if (-not (Test-Path -LiteralPath 'node_modules')) {
   throw 'Dependencies are missing. Run npm ci before verification.'
 }
 
+& "$PSScriptRoot\ui-hardcode-audit.ps1"
+
 npm run check
 if ($LASTEXITCODE -ne 0) { throw 'TypeScript verification failed.' }
 npm run format:check

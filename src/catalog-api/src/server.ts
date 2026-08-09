@@ -6,9 +6,11 @@ import {
   type ServerResponse,
 } from "node:http";
 import productsJson from "../data/products.json" with { type: "json" };
-import type { ErrorEnvelope, Product } from "./types.js";
+import { buildCategories, validateProducts } from "./catalog.js";
+import type { ErrorEnvelope } from "./types.js";
 
-const products = Object.freeze(productsJson satisfies Product[]);
+const products = validateProducts(productsJson);
+const categories = Object.freeze(buildCategories(products));
 const productsById = new Map(products.map((product) => [product.id, product]));
 
 type LogRecord = Record<string, unknown>;
@@ -135,7 +137,7 @@ export function createCatalogServer(
       }
 
       if (path === "/api/products") {
-        sendJson(response, 200, { products }, requestId);
+        sendJson(response, 200, { products, categories }, requestId);
         return;
       }
 

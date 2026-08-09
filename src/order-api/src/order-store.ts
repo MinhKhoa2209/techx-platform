@@ -1,8 +1,11 @@
 import { randomUUID } from "node:crypto";
-import type { Order, OrderItem } from "./types.js";
-
-const FREE_SHIPPING_THRESHOLD_CENTS = 5_000;
-const STANDARD_SHIPPING_CENTS = 999;
+import { addBusinessDays, maskEmail, shippingCentsFor } from "./commerce.js";
+import type {
+  CustomerInput,
+  Order,
+  OrderItem,
+  ShippingAddressInput,
+} from "./types.js";
 
 interface StoredOrder {
   order: Order;
@@ -23,7 +26,7 @@ export class OrderStore {
   readonly #idempotency = new Map<string, IdempotencyRecord>();
 
   constructor(
-    private readonly ttlMs: number,
+    readonly ttlMs: number,
     private readonly maxRecords: number,
     private readonly now: () => number = Date.now,
   ) {
@@ -58,6 +61,8 @@ export class OrderStore {
 
   create(
     items: OrderItem[],
+    customer: CustomerInput,
+    shippingAddress: ShippingAddressInput,
     idempotencyKey: string,
     payloadHash: string,
   ): Order {
@@ -70,13 +75,23 @@ export class OrderStore {
       (sum, item) => sum + item.lineTotalCents,
       0,
     );
-    const shippingCents =
-      subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS
-        ? 0
-        : STANDARD_SHIPPING_CENTS;
+    const shippingCents = shippingCentsFor(subtotalCents);
     const order: Order = {
       id: `ord_${randomUUID()}`,
       items,
+      customer: { name: customer.name, emailMasked: maskEmail(customer.email) },
+      shippingAddress: {
+        city: shippingAddress.city,
+        region: shippingAddress.region,
+        postalCode: shippingAddress.postalCode,
+        countryCode: shippingAddress.countryCode,
+      },
+      status: "confirmed",
+      shippingMethod: "standard",
+      estimatedDelivery: {
+        from: addBusinessDays(createdAtMs, 3).toISOString(),
+        to: addBusinessDays(createdAtMs, 5).toISOString(),
+      },
       subtotalCents,
       shippingCents,
       totalCents: subtotalCents + shippingCents,

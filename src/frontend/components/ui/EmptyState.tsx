@@ -1,7 +1,8 @@
 import Link from "next/link";
+import Icon, { type IconName } from "./Icon";
 
 interface EmptyStateProps {
-  icon?: string;
+  icon?: IconName;
   title: string;
   description?: string;
   actionLabel?: string;
@@ -10,7 +11,7 @@ interface EmptyStateProps {
 }
 
 export default function EmptyState({
-  icon = "🛝",
+  icon = "scope",
   title,
   description,
   actionLabel,
@@ -19,30 +20,20 @@ export default function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className="empty-state">
-      <div className="empty-state-icon" aria-hidden="true">
-        {icon}
-      </div>
-      <p className="empty-state-title">{title}</p>
+      <span className="empty-state-icon" aria-hidden="true">
+        <Icon name={icon} size={34} />
+      </span>
+      <h2 className="empty-state-title">{title}</h2>
       {description && <p className="empty-state-desc">{description}</p>}
-      {actionLabel &&
-        (actionHref ? (
-          <Link
-            href={actionHref}
-            className="btn btn-primary btn-sm"
-            style={{ marginTop: 8 }}
-          >
-            {actionLabel}
-          </Link>
-        ) : (
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            style={{ marginTop: 8 }}
-            onClick={onAction}
-          >
-            {actionLabel}
-          </button>
-        ))}
+      {actionLabel && actionHref ? (
+        <Link href={actionHref} className="btn btn-primary">
+          {actionLabel}
+        </Link>
+      ) : actionLabel ? (
+        <button type="button" className="btn btn-primary" onClick={onAction}>
+          {actionLabel}
+        </button>
+      ) : null}
     </div>
   );
 }

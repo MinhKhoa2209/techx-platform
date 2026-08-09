@@ -10,6 +10,7 @@ import { createOrderServer } from "../../order-api/src/server.js";
 import { GET as getProducts } from "../app/api/products/route";
 import { POST as createOrder } from "../app/api/orders/route";
 import { GET as getOrder } from "../app/api/orders/[id]/route";
+import { GET as getStoreConfig } from "../app/api/store-config/route";
 
 const apiKey = "phase3-local-secret";
 let catalogServer: Server;
@@ -67,6 +68,18 @@ describe("frontend BFF with real local services", () => {
         { productId: productsBody.products[0]?.id, quantity: 2 },
         { productId: productsBody.products[1]?.id, quantity: 1 },
       ],
+      customer: {
+        name: "Integration Customer",
+        email: "integration@example.com",
+      },
+      shippingAddress: {
+        line1: "100 Integration Street",
+        city: "Seattle",
+        region: "WA",
+        postalCode: "98101",
+        countryCode: "US",
+      },
+      shippingMethod: "standard",
     });
     const requestHeaders = {
       "content-type": "application/json",
@@ -114,6 +127,15 @@ describe("frontend BFF with real local services", () => {
     );
     expect(lookupResponse.status).toBe(200);
     expect(await lookupResponse.text()).not.toContain(apiKey);
+
+    const configResponse = await getStoreConfig(
+      new NextRequest("http://frontend.local/api/store-config"),
+    );
+    expect(configResponse.status).toBe(200);
+    const configBody = (await configResponse.json()) as {
+      config: { freeShippingThresholdCents: number };
+    };
+    expect(configBody.config.freeShippingThresholdCents).toBe(5_000);
   });
 
   it("returns 429 with Retry-After after the create-order burst limit", async () => {
@@ -128,7 +150,16 @@ describe("frontend BFF with real local services", () => {
           method: "POST",
           headers: { ...headers, "idempotency-key": `phase3-rate-${index}` },
           body: JSON.stringify({
-            items: [{ productId: "nova-refractor", quantity: 1 }],
+            items: [{ productId: "stellar-70-refractor", quantity: 1 }],
+            customer: { name: "Rate Customer", email: "rate@example.com" },
+            shippingAddress: {
+              line1: "100 Rate Street",
+              city: "Seattle",
+              region: "WA",
+              postalCode: "98101",
+              countryCode: "US",
+            },
+            shippingMethod: "standard",
           }),
         }),
       );

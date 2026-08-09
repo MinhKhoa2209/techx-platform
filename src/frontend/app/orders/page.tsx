@@ -2,185 +2,115 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { formatUsd } from "@/lib/format";
+import OrderDetails from "@/components/order/OrderDetails";
+import Icon from "@/components/ui/Icon";
+import { ApiClientError, getOrder } from "@/lib/api-client";
+import { isOrderId } from "@/lib/checkout";
+import {
+  CONTENT,
+  ORDER_ERROR_CONTENT,
+  ROUTES,
+  UI_TIMINGS,
+} from "@/lib/site-config";
 import type { Order } from "@/lib/types";
-import { useCart } from "@/lib/CartContext";
 
-type State = "idle" | "loading" | "success" | "error";
+type LookupState = "idle" | "loading" | "success" | "error";
 
 export default function OrdersPage() {
-  const { itemCount } = useCart();
   const [orderId, setOrderId] = useState("");
-  const [state, setState] = useState<State>("idle");
-  const [error, setError] = useState("");
   const [order, setOrder] = useState<Order | null>(null);
+  const [state, setState] = useState<LookupState>("idle");
+  const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
 
-  async function handleLookup(e: React.FormEvent) {
-    e.preventDefault();
+  async function lookup(event: React.FormEvent) {
+    event.preventDefault();
     const id = orderId.trim();
-    if (!id) {
-      setError("Please enter an order ID.");
+    if (!isOrderId(id)) {
+      setError(CONTENT.order.invalidId);
+      setState("error");
       return;
     }
     setState("loading");
     setError("");
     setOrder(null);
     try {
-      const res = await fetch(`/api/orders/${encodeURIComponent(id)}`, {
-        cache: "no-store",
-      });
-      const body = (await res.json()) as {
-        order?: Order;
-        error?: { message: string };
-      };
-      if (!res.ok)
-        throw new Error(body.error?.message ?? `Error ${res.status}`);
-      setOrder(body.order ?? null);
+      const result = await getOrder(id);
+      setOrder(result.order);
       setState("success");
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not find this order.",
-      );
+    } catch (reason) {
+      const code =
+        reason instanceof ApiClientError ? reason.code : "UNEXPECTED_ERROR";
+      setError(ORDER_ERROR_CONTENT[code] ?? CONTENT.order.notFound);
       setState("error");
     }
   }
 
-  async function copyOrderId() {
-    if (order) await navigator.clipboard.writeText(order.id);
+  async function copyId() {
+    if (!order) return;
+    await navigator.clipboard.writeText(order.id);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), UI_TIMINGS.transientFeedbackMs);
   }
 
   return (
-    <div className="lookup-page">
-      <nav
-        className="breadcrumb"
-        aria-label="Breadcrumb"
-        style={{ marginBottom: 24 }}
-      >
-        <Link href="/">Home</Link>
-        <span className="breadcrumb-sep">/</span>
-        <span style={{ color: "var(--ink)" }}>Track Order</span>
+    <div className="lookup-page section-shell">
+      <nav className="breadcrumbs" aria-label={CONTENT.common.breadcrumb}>
+        <Link href={ROUTES.home}>{CONTENT.common.home}</Link>
+        <span>/</span>
+        <span aria-current="page">{CONTENT.shell.orderLookup}</span>
       </nav>
-
-      <div className="lookup-card">
-        <p className="section-eyebrow">Order Management</p>
-        <h1 className="lookup-title">Track Your Order</h1>
-        <p className="lookup-desc">
-          Enter your order ID to check status and details. Order IDs start with
-          <code
-            style={{
-              marginLeft: 4,
-              fontSize: 13,
-              background: "var(--surface-2)",
-              padding: "1px 6px",
-              borderRadius: 4,
-            }}
-          >
-            ord_
-          </code>
-          . This is a demo — orders expire after 1 hour.
-        </p>
-
-        <form className="lookup-form" onSubmit={handleLookup}>
-          <div className="form-group">
-            <label htmlFor="order-id" className="form-label">
-              Order ID
-            </label>
-            <div className="lookup-input-row">
-              <input
-                id="order-id"
-                type="text"
-                className="form-input"
-                value={orderId}
-                onChange={(e) => setOrderId(e.target.value)}
-                placeholder="ord_…"
-                autoComplete="off"
-                spellCheck={false}
-              />
-              <button
-                type="submit"
-                className="btn btn-secondary"
-                disabled={state === "loading"}
-              >
-                {state === "loading" ? "Looking…" : "🔍 Find Order"}
-              </button>
-            </div>
-          </div>
-        </form>
-
-        <div aria-live="polite" aria-atomic="true">
-          {state === "loading" && (
-            <div style={{ marginTop: 16 }} aria-busy="true">
-              <div
-                className="skeleton-line w-full"
-                style={{ marginBottom: 8 }}
-              />
-              <div className="skeleton-line w-3-4" />
-            </div>
-          )}
-          {state === "error" && (
-            <div className="alert alert-error" style={{ marginTop: 16 }}>
-              <span>❌</span>
-              <div>
-                <strong>Not found</strong>
-                <p>{error}</p>
-              </div>
-            </div>
-          )}
-
-          {state === "success" && order && (
-            <div className="lookup-order-result">
-              <p className="lookup-result-title">✓ Order Found</p>
-              <div className="lookup-result-row">
-                <span className="lookup-result-label">Order ID</span>
-                <span className="lookup-result-value">
-                  {order.id}{" "}
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-sm"
-                    onClick={copyOrderId}
-                  >
-                    📋 Copy
-                  </button>
-                </span>
-              </div>
-              <div className="lookup-result-row">
-                <span className="lookup-result-label">Items</span>
-                <span className="lookup-result-value">
-                  {order.items.length} line item
-                  {order.items.length !== 1 ? "s" : ""}
-                </span>
-              </div>
-              <div className="lookup-result-row">
-                <span className="lookup-result-label">Total</span>
-                <span className="lookup-result-value">
-                  {formatUsd(order.totalCents)}
-                </span>
-              </div>
-              <div className="lookup-result-row">
-                <span className="lookup-result-label">Created</span>
-                <span className="lookup-result-value">
-                  {new Date(order.createdAt).toLocaleString()}
-                </span>
-              </div>
-              <div className="lookup-result-row">
-                <span className="lookup-result-label">Expires</span>
-                <span className="lookup-result-value">
-                  {new Date(order.expiresAt).toLocaleString()}
-                </span>
-              </div>
-            </div>
-          )}
+      <div className="lookup-hero">
+        <div>
+          <p className="eyebrow">{CONTENT.order.eyebrow}</p>
+          <h1>{CONTENT.order.lookupTitle}</h1>
+          <p>{CONTENT.order.lookupBody}</p>
         </div>
-
-        {itemCount > 0 && (
-          <p className="lookup-back-link">
-            Have items in your cart? <Link href="/cart">Go to Cart →</Link>
+        <Icon name="package" size={48} />
+      </div>
+      <form className="lookup-form" onSubmit={lookup} noValidate>
+        <label htmlFor="order-id">{CONTENT.order.id}</label>
+        <div>
+          <input
+            id="order-id"
+            value={orderId}
+            onChange={(event) => {
+              setOrderId(event.target.value);
+              setError("");
+            }}
+            placeholder={CONTENT.order.placeholder}
+            autoComplete="off"
+            spellCheck={false}
+            aria-invalid={state === "error"}
+            aria-describedby={
+              state === "error" ? "lookup-error" : "lookup-help"
+            }
+          />
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={state === "loading"}
+          >
+            {state === "loading" ? (
+              CONTENT.order.lookingUp
+            ) : (
+              <>
+                <Icon name="search" size={18} />
+                {CONTENT.order.lookupAction}
+              </>
+            )}
+          </button>
+        </div>
+        <p id="lookup-help">{CONTENT.order.ttlHelp}</p>
+        {state === "error" && (
+          <p id="lookup-error" className="field-error" role="alert">
+            {error}
           </p>
         )}
-        <p className="lookup-back-link">
-          <Link href="/">← Back to Store</Link>
-        </p>
-      </div>
+      </form>
+      {state === "success" && order && (
+        <OrderDetails order={order} onCopy={copyId} copied={copied} compact />
+      )}
     </div>
   );
 }

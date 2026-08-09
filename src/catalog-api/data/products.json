@@ -1,44 +1,317 @@
 [
   {
-    "id": "nova-refractor",
-    "name": "Nova Refractor Telescope",
-    "description": "A compact beginner telescope for crisp lunar and planetary views.",
+    "id": "stellar-70-refractor",
+    "sku": "TX-TEL-070",
+    "name": "Stellar 70 Refractor",
+    "category": "telescopes",
+    "shortDescription": "A friendly first telescope for bright lunar and planetary views.",
+    "description": "The Stellar 70 pairs a crisp 70 mm objective with a stable alt-azimuth mount, making first observations simple without sacrificing optical clarity.",
     "priceCents": 12900,
-    "image": "/products/nova-refractor.svg"
+    "currency": "USD",
+    "availability": "in_stock",
+    "inventoryQuantity": 18,
+    "featured": true,
+    "tags": ["beginner", "moon", "planets", "portable"],
+    "specifications": [
+      { "label": "Aperture", "value": "70 mm" },
+      { "label": "Focal length", "value": "700 mm" },
+      { "label": "Mount", "value": "Alt-azimuth" },
+      { "label": "Included eyepieces", "value": "10 mm and 25 mm" }
+    ],
+    "images": [
+      {
+        "src": "/products/stellar-70-refractor.svg",
+        "alt": "Stellar 70 refractor telescope on an alt-azimuth tripod"
+      }
+    ]
   },
   {
-    "id": "trail-binoculars",
-    "name": "Trail 8x42 Binoculars",
-    "description": "Weather-resistant binoculars with a bright, wide field of view.",
-    "priceCents": 8900,
-    "image": "/products/trail-binoculars.svg"
+    "id": "orion-tabletop-reflector",
+    "sku": "TX-TEL-114",
+    "name": "Orion 114 Tabletop Reflector",
+    "category": "telescopes",
+    "shortDescription": "A compact reflector with generous aperture for backyard deep-sky sessions.",
+    "description": "Set the Orion 114 on a sturdy table and sweep through star clusters, nebulae and lunar detail with an intuitive rotating base.",
+    "priceCents": 24900,
+    "compareAtPriceCents": 27900,
+    "currency": "USD",
+    "availability": "low_stock",
+    "inventoryQuantity": 4,
+    "featured": true,
+    "tags": ["deep sky", "reflector", "backyard", "compact"],
+    "specifications": [
+      { "label": "Aperture", "value": "114 mm" },
+      { "label": "Focal length", "value": "500 mm" },
+      { "label": "Mount", "value": "Tabletop Dobsonian" },
+      { "label": "Weight", "value": "6.2 kg" }
+    ],
+    "images": [
+      {
+        "src": "/products/orion-tabletop-reflector.svg",
+        "alt": "Orion 114 reflector telescope on a compact tabletop base"
+      }
+    ]
   },
   {
-    "id": "lunar-filter",
+    "id": "nomad-80-travel-scope",
+    "sku": "TX-TEL-080",
+    "name": "Nomad 80 Travel Scope",
+    "category": "telescopes",
+    "shortDescription": "Packable wide-field optics for campsites, eclipses and road trips.",
+    "description": "A short-tube 80 mm refractor with a padded carry case and lightweight tripod, designed for quick setup away from city lights.",
+    "priceCents": 32900,
+    "currency": "USD",
+    "availability": "in_stock",
+    "inventoryQuantity": 11,
+    "featured": false,
+    "tags": ["travel", "wide field", "portable", "camping"],
+    "specifications": [
+      { "label": "Aperture", "value": "80 mm" },
+      { "label": "Focal length", "value": "400 mm" },
+      { "label": "Packed length", "value": "42 cm" },
+      { "label": "Case", "value": "Padded carry case" }
+    ],
+    "images": [
+      {
+        "src": "/products/nomad-80-travel-scope.svg",
+        "alt": "Nomad 80 compact travel telescope with carry handle"
+      }
+    ]
+  },
+  {
+    "id": "horizon-smart-telescope",
+    "sku": "TX-TEL-150",
+    "name": "Horizon Smart Telescope",
+    "category": "telescopes",
+    "shortDescription": "App-guided alignment and live stacking for effortless deep-sky imaging.",
+    "description": "The Horizon combines assisted navigation, a sensitive imaging sensor and automated live stacking in a portable all-in-one observing system.",
+    "priceCents": 69900,
+    "currency": "USD",
+    "availability": "out_of_stock",
+    "inventoryQuantity": 0,
+    "featured": false,
+    "tags": ["smart", "imaging", "deep sky", "app guided"],
+    "specifications": [
+      { "label": "Aperture", "value": "80 mm" },
+      { "label": "Sensor", "value": "2 MP low-light CMOS" },
+      { "label": "Control", "value": "iOS and Android app" },
+      { "label": "Battery", "value": "Up to 6 hours" }
+    ],
+    "images": [
+      {
+        "src": "/products/horizon-smart-telescope.svg",
+        "alt": "Horizon compact smart telescope on an integrated tripod"
+      }
+    ]
+  },
+  {
+    "id": "trail-8x42-binoculars",
+    "sku": "TX-BIN-842",
+    "name": "Trail 8×42 Binoculars",
+    "category": "binoculars",
+    "shortDescription": "Weather-sealed everyday binoculars with a bright, steady field of view.",
+    "description": "Balanced 8× magnification and 42 mm objectives make the Trail a versatile companion for constellations, wildlife and travel.",
+    "priceCents": 9900,
+    "compareAtPriceCents": 11900,
+    "currency": "USD",
+    "availability": "in_stock",
+    "inventoryQuantity": 22,
+    "featured": true,
+    "tags": ["weatherproof", "birding", "stargazing", "travel"],
+    "specifications": [
+      { "label": "Magnification", "value": "8×" },
+      { "label": "Objective", "value": "42 mm" },
+      { "label": "Field of view", "value": "129 m at 1,000 m" },
+      { "label": "Weather sealing", "value": "IPX7" }
+    ],
+    "images": [
+      {
+        "src": "/products/trail-8x42-binoculars.svg",
+        "alt": "Trail 8 by 42 weather-sealed binoculars"
+      }
+    ]
+  },
+  {
+    "id": "nightwatch-10x50-binoculars",
+    "sku": "TX-BIN-1050",
+    "name": "Nightwatch 10×50 Binoculars",
+    "category": "binoculars",
+    "shortDescription": "High-light-gathering binoculars tuned for constellations and star fields.",
+    "description": "Fully multi-coated 50 mm objectives reveal richer star fields while the tripod adapter socket supports longer observing sessions.",
+    "priceCents": 14900,
+    "currency": "USD",
+    "availability": "in_stock",
+    "inventoryQuantity": 13,
+    "featured": true,
+    "tags": ["stargazing", "tripod ready", "high contrast", "porro prism"],
+    "specifications": [
+      { "label": "Magnification", "value": "10×" },
+      { "label": "Objective", "value": "50 mm" },
+      { "label": "Prism", "value": "BaK-4 Porro" },
+      { "label": "Tripod adapter", "value": "Standard 1/4 inch" }
+    ],
+    "images": [
+      {
+        "src": "/products/nightwatch-10x50-binoculars.svg",
+        "alt": "Nightwatch 10 by 50 astronomy binoculars"
+      }
+    ]
+  },
+  {
+    "id": "vista-8x25-compact-binoculars",
+    "sku": "TX-BIN-825",
+    "name": "Vista 8×25 Compact Binoculars",
+    "category": "binoculars",
+    "shortDescription": "Pocket-sized optics for daytime scouting and casual night-sky orientation.",
+    "description": "The folding Vista weighs less than 300 grams and slips into a daypack without giving up sharp, color-neutral views.",
+    "priceCents": 7900,
+    "currency": "USD",
+    "availability": "in_stock",
+    "inventoryQuantity": 27,
+    "featured": false,
+    "tags": ["compact", "lightweight", "travel", "daytime"],
+    "specifications": [
+      { "label": "Magnification", "value": "8×" },
+      { "label": "Objective", "value": "25 mm" },
+      { "label": "Weight", "value": "286 g" },
+      { "label": "Close focus", "value": "2.5 m" }
+    ],
+    "images": [
+      {
+        "src": "/products/vista-8x25-compact-binoculars.svg",
+        "alt": "Vista folding 8 by 25 compact binoculars"
+      }
+    ]
+  },
+  {
+    "id": "lunar-contrast-filter",
+    "sku": "TX-ACC-LUN",
     "name": "Lunar Contrast Filter",
-    "description": "Reduces glare and reveals more detail along the lunar terminator.",
+    "category": "accessories",
+    "shortDescription": "Reduce lunar glare and reveal subtle detail near the terminator.",
+    "description": "A neutral-density threaded filter that improves comfort during bright lunar observations while preserving natural color.",
     "priceCents": 2400,
-    "image": "/products/lunar-filter.svg"
+    "currency": "USD",
+    "availability": "in_stock",
+    "inventoryQuantity": 41,
+    "featured": false,
+    "tags": ["moon", "filter", "1.25 inch", "contrast"],
+    "specifications": [
+      { "label": "Barrel size", "value": "1.25 inch" },
+      { "label": "Transmission", "value": "25%" },
+      { "label": "Thread", "value": "Standard eyepiece thread" },
+      { "label": "Case", "value": "Protective storage case" }
+    ],
+    "images": [
+      {
+        "src": "/products/lunar-contrast-filter.svg",
+        "alt": "Lunar contrast filter in a round protective case"
+      }
+    ]
   },
   {
-    "id": "red-observer-light",
-    "name": "Red Observer Light",
-    "description": "A dimmable red torch that helps preserve night vision outdoors.",
+    "id": "plossl-eyepiece-set",
+    "sku": "TX-ACC-EYE",
+    "name": "Plössl Eyepiece Set",
+    "category": "accessories",
+    "shortDescription": "Three versatile focal lengths for low, medium and high magnification.",
+    "description": "A matched set of fully coated 1.25-inch eyepieces with fold-down eye guards and labeled protective caps.",
+    "priceCents": 11900,
+    "compareAtPriceCents": 13900,
+    "currency": "USD",
+    "availability": "low_stock",
+    "inventoryQuantity": 3,
+    "featured": false,
+    "tags": ["eyepiece", "upgrade", "1.25 inch", "planetary"],
+    "specifications": [
+      { "label": "Focal lengths", "value": "6 mm, 12 mm and 25 mm" },
+      { "label": "Barrel size", "value": "1.25 inch" },
+      { "label": "Optical design", "value": "Four-element Plössl" },
+      { "label": "Coatings", "value": "Fully multi-coated" }
+    ],
+    "images": [
+      {
+        "src": "/products/plossl-eyepiece-set.svg",
+        "alt": "Three Plössl telescope eyepieces in different focal lengths"
+      }
+    ]
+  },
+  {
+    "id": "observer-red-light",
+    "sku": "TX-ACC-RED",
+    "name": "Observer Red Light",
+    "category": "accessories",
+    "shortDescription": "Dimmable red illumination that helps preserve night vision.",
+    "description": "A glove-friendly rotary control moves from a faint chart-reading glow to a brighter campsite beam without white-light surprises.",
     "priceCents": 1800,
-    "image": "/products/red-observer-light.svg"
+    "currency": "USD",
+    "availability": "in_stock",
+    "inventoryQuantity": 35,
+    "featured": false,
+    "tags": ["night vision", "lighting", "field", "dimmable"],
+    "specifications": [
+      { "label": "Output", "value": "0.5–15 lumens" },
+      { "label": "Power", "value": "2 × AAA batteries" },
+      { "label": "Control", "value": "Continuous dimmer" },
+      { "label": "Weather resistance", "value": "IPX4" }
+    ],
+    "images": [
+      {
+        "src": "/products/observer-red-light.svg",
+        "alt": "Compact dimmable red astronomy flashlight"
+      }
+    ]
   },
   {
-    "id": "sky-atlas",
-    "name": "Pocket Sky Atlas",
-    "description": "A field-friendly guide to constellations and deep-sky targets.",
-    "priceCents": 3200,
-    "image": "/products/sky-atlas.svg"
+    "id": "altazimuth-field-tripod",
+    "sku": "TX-ACC-TRI",
+    "name": "Alt-Azimuth Field Tripod",
+    "category": "accessories",
+    "shortDescription": "A smooth, portable support for spotting scopes and compact telescopes.",
+    "description": "An aluminum field tripod with slow-motion controls, a quick-release plate and adjustable tension for balanced observing.",
+    "priceCents": 14900,
+    "currency": "USD",
+    "availability": "in_stock",
+    "inventoryQuantity": 9,
+    "featured": false,
+    "tags": ["tripod", "mount", "portable", "slow motion"],
+    "specifications": [
+      { "label": "Load capacity", "value": "5 kg" },
+      { "label": "Height range", "value": "68–158 cm" },
+      { "label": "Head", "value": "Two-axis slow motion" },
+      { "label": "Packed weight", "value": "2.4 kg" }
+    ],
+    "images": [
+      {
+        "src": "/products/altazimuth-field-tripod.svg",
+        "alt": "Aluminum alt-azimuth field tripod with slow-motion head"
+      }
+    ]
   },
   {
-    "id": "lens-care-kit",
+    "id": "optics-care-kit",
+    "sku": "TX-ACC-CARE",
     "name": "Optics Care Kit",
-    "description": "Brush, blower and microfiber tools for safe lens maintenance.",
+    "category": "accessories",
+    "shortDescription": "A safe cleaning set for coated lenses, eyepieces and binoculars.",
+    "description": "Remove dust and fingerprints with a blower, soft brush, washable microfiber cloth and alcohol-free cleaning solution.",
     "priceCents": 2100,
-    "image": "/products/lens-care-kit.svg"
+    "currency": "USD",
+    "availability": "in_stock",
+    "inventoryQuantity": 48,
+    "featured": false,
+    "tags": ["cleaning", "maintenance", "lenses", "field kit"],
+    "specifications": [
+      { "label": "Contents", "value": "Blower, brush, cloth and solution" },
+      { "label": "Solution", "value": "Alcohol-free, 30 ml" },
+      { "label": "Cloth", "value": "Washable microfiber" },
+      { "label": "Case", "value": "Zip storage pouch" }
+    ],
+    "images": [
+      {
+        "src": "/products/optics-care-kit.svg",
+        "alt": "Optics cleaning kit with blower, brush, cloth and solution"
+      }
+    ]
   }
 ]

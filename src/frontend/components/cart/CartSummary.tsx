@@ -1,114 +1,122 @@
 "use client";
 
 import Link from "next/link";
+import Icon from "@/components/ui/Icon";
 import { useCart } from "@/lib/CartContext";
 import { formatUsd } from "@/lib/format";
+import { hasUnavailableItems, orderPreview } from "@/lib/cart";
+import { CONTENT, ROUTES } from "@/lib/site-config";
+import { useStorefront } from "@/lib/StorefrontContext";
 
-const FREE_SHIPPING_THRESHOLD = 5000; // $50.00 in cents
-
-interface CartSummaryProps {
+export default function CartSummary({
+  mode = "cart",
+}: {
   mode?: "cart" | "checkout";
-}
+}) {
+  const { items, subtotalCents } = useCart();
+  const { config, configState, retryConfig } = useStorefront();
 
-export default function CartSummary({ mode = "cart" }: CartSummaryProps) {
-  const { items, totalCents } = useCart();
-  const shippingCents = totalCents >= FREE_SHIPPING_THRESHOLD ? 0 : 999;
-  const grandTotal = totalCents + shippingCents;
-  const progressPct = Math.min(
-    (totalCents / FREE_SHIPPING_THRESHOLD) * 100,
-    100,
+  if (!config) {
+    return (
+      <aside className="cart-summary-panel" aria-label={CONTENT.cart.summary}>
+        <h2>{CONTENT.cart.summary}</h2>
+        {configState === "error" ? (
+          <div className="inline-error" role="alert">
+            <p>{CONTENT.cart.deliveryUnavailable}</p>
+            <button
+              className="btn btn-secondary"
+              type="button"
+              onClick={retryConfig}
+            >
+              {CONTENT.common.retry}
+            </button>
+          </div>
+        ) : (
+          <div className="summary-skeleton" aria-busy="true">
+            {CONTENT.common.loading}
+          </div>
+        )}
+      </aside>
+    );
+  }
+
+  const preview = orderPreview(items, config);
+  const remaining = Math.max(
+    config.freeShippingThresholdCents - subtotalCents,
+    0,
   );
-  const remainingCents = Math.max(FREE_SHIPPING_THRESHOLD - totalCents, 0);
+  const progress = Math.min(
+    subtotalCents / config.freeShippingThresholdCents,
+    1,
+  );
+  const blocked = hasUnavailableItems(items);
 
   return (
-    <aside className="cart-summary-panel" aria-label="Order summary">
-      <p className="cart-summary-title">Order Summary</p>
-
+    <aside className="cart-summary-panel" aria-label={CONTENT.cart.summary}>
+      <h2>
+        {mode === "checkout" ? CONTENT.checkout.review : CONTENT.cart.summary}
+      </h2>
+      {mode === "checkout" && (
+        <ul className="summary-items">
+          {items.map((item) => (
+            <li key={item.product.id}>
+              <span>
+                {item.product.name} × {item.quantity}
+              </span>
+              <strong>
+                {formatUsd(item.product.priceCents * item.quantity)}
+              </strong>
+            </li>
+          ))}
+        </ul>
+      )}
       {mode === "cart" && (
-        <div className="shipping-progress" aria-label="Free shipping progress">
-          <div className="shipping-progress-bar-wrap">
-            <div
-              className="shipping-progress-bar"
-              style={{ width: `${progressPct}%` }}
-              role="progressbar"
-              aria-valuenow={progressPct}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            />
-          </div>
-          <p
-            className={`shipping-progress-text${remainingCents === 0 ? " unlocked" : ""}`}
-          >
-            {remainingCents === 0
-              ? "🎉 Free shipping unlocked!"
-              : `Add ${formatUsd(remainingCents)} more for free shipping`}
+        <div className="shipping-progress">
+          <progress
+            value={progress}
+            max={1}
+            aria-label={CONTENT.cart.freeDeliveryProgress}
+          />
+          <p>
+            {remaining === 0
+              ? CONTENT.cart.freeDelivery
+              : CONTENT.cart.freeDeliveryRemaining(formatUsd(remaining))}
           </p>
         </div>
       )}
-
-      <div className="cart-summary-rows">
-        {mode === "checkout" &&
-          items.map((item) => (
-            <div key={item.product.id} className="cart-summary-row">
-              <span className="cart-summary-row-label">
-                {item.product.name} × {item.quantity}
-              </span>
-              <span className="cart-summary-row-value">
-                {formatUsd(item.product.priceCents * item.quantity)}
-              </span>
-            </div>
-          ))}
-        <div className="cart-summary-row">
-          <span className="cart-summary-row-label">Subtotal</span>
-          <span className="cart-summary-row-value">
-            {formatUsd(totalCents)}
-          </span>
+      <dl className="summary-rows">
+        <div>
+          <dt>{CONTENT.cart.subtotal}</dt>
+          <dd>{formatUsd(preview.subtotalCents)}</dd>
         </div>
-        <div className="cart-summary-row">
-          <span className="cart-summary-row-label">Shipping</span>
-          <span
-            className="cart-summary-row-value"
-            style={{
-              color: shippingCents === 0 ? "var(--success)" : undefined,
-            }}
-          >
-            {shippingCents === 0 ? "FREE" : formatUsd(shippingCents)}
-          </span>
+        <div>
+          <dt>{CONTENT.cart.shipping}</dt>
+          <dd>
+            {preview.shippingCents === 0
+              ? CONTENT.common.free
+              : formatUsd(preview.shippingCents)}
+          </dd>
         </div>
-      </div>
-
-      <div className="cart-summary-divider" />
-
-      <div className="cart-summary-total">
-        <span className="cart-summary-total-label">Total</span>
-        <span className="cart-summary-total-value">
-          {formatUsd(grandTotal)}
-        </span>
-      </div>
-
-      {mode === "cart" && (
-        <>
-          <Link href="/checkout" className="btn btn-primary btn-full btn-lg">
-            Proceed to Checkout →
+        <div className="summary-total">
+          <dt>{CONTENT.cart.total}</dt>
+          <dd>{formatUsd(preview.totalCents)}</dd>
+        </div>
+      </dl>
+      {mode === "cart" &&
+        (blocked ? (
+          <p className="inline-warning" role="alert">
+            {CONTENT.cart.unavailableItems}
+          </p>
+        ) : (
+          <Link href={ROUTES.checkout} className="btn btn-primary btn-full">
+            {CONTENT.cart.checkout}
+            <Icon name="arrow" size={18} />
           </Link>
-          <div className="payment-logos">
-            <span className="payment-logo">VISA</span>
-            <span className="payment-logo">MC</span>
-            <span className="payment-logo">PayPal</span>
-          </div>
-          <div className="promo-row">
-            <input
-              type="text"
-              className="promo-input"
-              placeholder="Promo code"
-              aria-label="Promo code"
-            />
-            <button type="button" className="promo-btn">
-              Apply
-            </button>
-          </div>
-        </>
-      )}
+        ))}
+      <p className="summary-demo-note">
+        <Icon name="shield" size={17} />
+        {CONTENT.cart.demoNote}
+      </p>
     </aside>
   );
 }

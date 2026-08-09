@@ -31,17 +31,24 @@ test("lists products and propagates a request id", async () => {
   const response = await fetch(`${baseUrl}/api/products`, {
     headers: { "x-request-id": "catalog-test-request" },
   });
-  const body = (await response.json()) as { products: Array<{ id: string }> };
+  const body = (await response.json()) as {
+    products: Array<{ id: string }>;
+    categories: Array<{ id: string; count: number }>;
+  };
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("x-request-id"), "catalog-test-request");
-  assert.ok(body.products.length >= 6);
+  assert.equal(body.products.length, 12);
+  assert.equal(
+    body.categories.reduce((sum, category) => sum + category.count, 0),
+    body.products.length,
+  );
 });
 
 test("returns one product and a structured 404", async () => {
-  const found = await fetch(`${baseUrl}/api/products/nova-refractor`);
+  const found = await fetch(`${baseUrl}/api/products/stellar-70-refractor`);
   const foundBody = (await found.json()) as { product: { id: string } };
   assert.equal(found.status, 200);
-  assert.equal(foundBody.product.id, "nova-refractor");
+  assert.equal(foundBody.product.id, "stellar-70-refractor");
 
   const missing = await fetch(`${baseUrl}/api/products/missing`);
   const missingBody = (await missing.json()) as {

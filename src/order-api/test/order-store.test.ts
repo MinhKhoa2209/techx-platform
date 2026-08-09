@@ -5,15 +5,35 @@ import { OrderStore } from "../src/order-store.js";
 const item = {
   productId: "product-1",
   quantity: 1,
+  sku: "TEST-001",
   name: "Product 1",
+  image: "/products/test.svg",
   unitPriceCents: 500,
   lineTotalCents: 500,
 };
 
+const customer = { name: "Test Customer", email: "test@example.com" };
+const address = {
+  line1: "100 Test Street",
+  city: "Seattle",
+  region: "WA",
+  postalCode: "98101",
+  countryCode: "US" as const,
+};
+
+function createOrder(
+  store: OrderStore,
+  items: (typeof item)[],
+  key: string,
+  hash: string,
+) {
+  return store.create(items, customer, address, key, hash);
+}
+
 test("expires orders and their idempotency records", () => {
   let now = 1_000;
   const store = new OrderStore(1_000, 10, () => now);
-  const order = store.create([item], "idem-key", "hash");
+  const order = createOrder(store, [item], "idem-key", "hash");
   assert.equal(store.find(order.id)?.id, order.id);
   assert.equal(store.lookupIdempotency("idem-key", "hash").kind, "hit");
 
@@ -25,16 +45,16 @@ test("expires orders and their idempotency records", () => {
 test("evicts the oldest order when capacity is reached", () => {
   let now = 1_000;
   const store = new OrderStore(60_000, 1, () => now);
-  const first = store.create([item], "first-key", "first-hash");
+  const first = createOrder(store, [item], "first-key", "first-hash");
   now += 1;
-  const second = store.create([item], "second-key", "second-hash");
+  const second = createOrder(store, [item], "second-key", "second-hash");
   assert.equal(store.find(first.id), undefined);
   assert.equal(store.find(second.id)?.id, second.id);
 });
 
 test("locks standard or free shipping into the order total", () => {
   const store = new OrderStore(60_000, 10);
-  const standard = store.create([item], "standard-key", "standard-hash");
+  const standard = createOrder(store, [item], "standard-key", "standard-hash");
   assert.equal(standard.subtotalCents, 500);
   assert.equal(standard.shippingCents, 999);
   assert.equal(standard.totalCents, 1_499);
@@ -44,8 +64,28 @@ test("locks standard or free shipping into the order total", () => {
     unitPriceCents: 5_000,
     lineTotalCents: 5_000,
   };
-  const free = store.create([freeShippingItem], "free-key", "free-hash");
+  const free = createOrder(store, [freeShippingItem], "free-key", "free-hash");
   assert.equal(free.subtotalCents, 5_000);
   assert.equal(free.shippingCents, 0);
   assert.equal(free.totalCents, 5_000);
+});
+
+test("stores only masked customer and coarse shipping data", () => {
+  const store = new OrderStore(60_000, 10, () => Date.UTC(2026, 7, 7, 12));
+  const order = createOrder(store, [item], "privacy-key", "privacy-hash");
+  assert.deepEqual(order.customer, {
+    name: "Test Customer",
+    emailMasked: "te**@example.com",
+  });
+  assert.deepEqual(order.shippingAddress, {
+    city: "Seattle",
+    region: "WA",
+    postalCode: "98101",
+    countryCode: "US",
+  });
+  assert.equal(order.status, "confirmed");
+  assert.equal(order.estimatedDelivery.from, "2026-08-12T12:00:00.000Z");
+  assert.equal(order.estimatedDelivery.to, "2026-08-14T12:00:00.000Z");
+  assert.equal(JSON.stringify(order).includes("100 Test Street"), false);
+  assert.equal(JSON.stringify(order).includes("test@example.com"), false);
 });

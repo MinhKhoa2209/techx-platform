@@ -1,107 +1,93 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import Icon from "@/components/ui/Icon";
 import { useCart } from "@/lib/CartContext";
 import { formatUsd } from "@/lib/format";
+import { CONTENT, ROUTES, UI_LIMITS } from "@/lib/site-config";
 
-interface CartDropdownProps {
-  onClose: () => void;
-}
+export default function CartDropdown({ onClose }: { onClose: () => void }) {
+  const { items, subtotalCents } = useCart();
 
-export default function CartDropdown({ onClose }: CartDropdownProps) {
-  const { items, totalCents } = useCart();
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
 
   return (
-    <div
-      className="cart-dropdown"
-      role="dialog"
-      aria-label="Cart preview"
-      aria-modal="true"
-    >
+    <section className="cart-dropdown" aria-label={CONTENT.cart.preview}>
       <div className="cart-dropdown-header">
-        <span className="cart-dropdown-title">
-          My Cart {items.length > 0 && `(${items.length})`}
-        </span>
+        <strong>{CONTENT.cart.title}</strong>
         <button
-          className="cart-dropdown-close"
+          className="icon-button"
           onClick={onClose}
-          aria-label="Close cart"
+          aria-label={CONTENT.cart.closePreview}
           type="button"
         >
-          ×
+          <Icon name="close" size={18} />
         </button>
       </div>
-
       {items.length === 0 ? (
         <div className="cart-dropdown-empty">
-          <div className="cart-dropdown-empty-icon">🛒</div>
-          <p>Your cart is empty</p>
-          <p style={{ fontSize: 12, marginTop: 4, color: "var(--ink-3)" }}>
-            Browse our collection to get started
-          </p>
-        </div>
-      ) : (
-        <div className="cart-dropdown-items">
-          {items.map((item) => (
-            <div key={item.product.id} className="cart-dropdown-item">
-              <img
-                src={item.product.image}
-                alt={item.product.name}
-                className="cart-dropdown-item-img"
-              />
-              <div className="cart-dropdown-item-info">
-                <p className="cart-dropdown-item-name">{item.product.name}</p>
-                <p className="cart-dropdown-item-meta">
-                  Qty: {item.quantity} · {formatUsd(item.product.priceCents)}{" "}
-                  each
-                </p>
-              </div>
-              <span className="cart-dropdown-item-price">
-                {formatUsd(item.product.priceCents * item.quantity)}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {items.length > 0 && (
-        <div className="cart-dropdown-footer">
-          <div className="cart-dropdown-subtotal">
-            <span className="cart-dropdown-subtotal-label">Subtotal</span>
-            <span className="cart-dropdown-subtotal-amount">
-              {formatUsd(totalCents)}
-            </span>
-          </div>
-          <div className="cart-dropdown-actions">
-            <Link
-              href="/cart"
-              className="btn btn-outline btn-sm"
-              onClick={onClose}
-            >
-              View Cart
-            </Link>
-            <Link
-              href="/checkout"
-              className="btn btn-primary btn-sm"
-              onClick={onClose}
-            >
-              Checkout
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {items.length === 0 && (
-        <div style={{ padding: "12px 20px 16px" }}>
+          <Icon name="cart" size={30} />
+          <p>{CONTENT.cart.empty}</p>
           <Link
-            href="/products"
-            className="btn btn-primary btn-full btn-sm"
+            href={ROUTES.products}
+            className="btn btn-primary"
             onClick={onClose}
           >
-            Shop Now
+            {CONTENT.common.shopNow}
           </Link>
         </div>
+      ) : (
+        <>
+          <div className="cart-dropdown-items">
+            {items.slice(0, UI_LIMITS.cartPreviewItems).map((item) => (
+              <div key={item.product.id} className="cart-dropdown-item">
+                <img
+                  src={item.product.images[0]!.src}
+                  alt={item.product.images[0]!.alt}
+                  width={640}
+                  height={480}
+                />
+                <div>
+                  <p>{item.product.name}</p>
+                  <small>
+                    {item.quantity} × {formatUsd(item.product.priceCents)}
+                  </small>
+                </div>
+                <strong>
+                  {formatUsd(item.product.priceCents * item.quantity)}
+                </strong>
+              </div>
+            ))}
+          </div>
+          <div className="cart-dropdown-footer">
+            <div>
+              <span>{CONTENT.cart.subtotal}</span>
+              <strong>{formatUsd(subtotalCents)}</strong>
+            </div>
+            <Link
+              href={ROUTES.cart}
+              className="btn btn-secondary"
+              onClick={onClose}
+            >
+              {CONTENT.cart.viewCart}
+            </Link>
+            <Link
+              href={ROUTES.checkout}
+              className="btn btn-primary"
+              onClick={onClose}
+            >
+              {CONTENT.cart.checkout}
+            </Link>
+          </div>
+        </>
       )}
-    </div>
+    </section>
   );
 }

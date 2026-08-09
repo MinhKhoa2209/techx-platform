@@ -27,6 +27,10 @@ $catalog = Invoke-RestMethod -Uri "$BaseUrl/api/products" -TimeoutSec 8
 if (-not $catalog.products -or $catalog.products.Count -lt 1) {
   throw 'Catalog returned no products through the frontend BFF.'
 }
+$storeConfig = (Invoke-RestMethod -Uri "$BaseUrl/api/store-config" -TimeoutSec 8).config
+if (-not $storeConfig -or $storeConfig.shippingMethods[0].id -ne 'standard') {
+  throw 'Store configuration is invalid.'
+}
 
 $product = Invoke-RestMethod -Uri "$BaseUrl/api/products/$($catalog.products[0].id)" -TimeoutSec 8
 if ($product.product.id -ne $catalog.products[0].id) {
@@ -38,20 +42,33 @@ function New-SmokeOrder($selectedProduct) {
     items = @(
       @{ productId = $selectedProduct.id; quantity = 1 }
     )
-  } | ConvertTo-Json -Depth 4
+    customer = @{ name = 'Container Smoke'; email = 'smoke@example.com' }
+    shippingAddress = @{
+      line1 = '100 Smoke Street'
+      city = 'Seattle'
+      region = 'WA'
+      postalCode = '98101'
+      countryCode = 'US'
+    }
+    shippingMethod = 'standard'
+  } | ConvertTo-Json -Depth 6
   $headers = @{ 'Idempotency-Key' = "smoke-$([guid]::NewGuid())" }
   return Invoke-RestMethod -Method Post -Uri "$BaseUrl/api/orders" -Headers $headers -ContentType 'application/json' -Body $orderBody -TimeoutSec 10
 }
 
-$freeShippingProduct = $catalog.products | Where-Object { $_.priceCents -ge 5000 } | Select-Object -First 1
-$standardShippingProduct = $catalog.products | Where-Object { $_.priceCents -lt 5000 } | Select-Object -First 1
+$freeShippingProduct = $catalog.products | Where-Object {
+  $_.availability -ne 'out_of_stock' -and $_.priceCents -ge $storeConfig.freeShippingThresholdCents
+} | Select-Object -First 1
+$standardShippingProduct = $catalog.products | Where-Object {
+  $_.availability -ne 'out_of_stock' -and $_.priceCents -lt $storeConfig.freeShippingThresholdCents
+} | Select-Object -First 1
 $freeOrder = New-SmokeOrder $freeShippingProduct
 $standardOrder = New-SmokeOrder $standardShippingProduct
 
 if ($freeOrder.order.shippingCents -ne 0 -or $freeOrder.order.totalCents -ne $freeOrder.order.subtotalCents) {
   throw 'Free-shipping order totals are inconsistent.'
 }
-if ($standardOrder.order.shippingCents -ne 999 -or $standardOrder.order.totalCents -ne ($standardOrder.order.subtotalCents + 999)) {
+if ($standardOrder.order.shippingCents -ne $storeConfig.standardShippingCents -or $standardOrder.order.totalCents -ne ($standardOrder.order.subtotalCents + $storeConfig.standardShippingCents)) {
   throw 'Standard-shipping order totals are inconsistent.'
 }
 

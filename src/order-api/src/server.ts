@@ -8,11 +8,19 @@ import {
 import { CatalogUnavailableError } from "./catalog-client.js";
 import type { CatalogClient } from "./catalog-client.js";
 import { OrderStore } from "./order-store.js";
+import {
+  MAX_ORDER_LINES,
+  MAX_QUANTITY_PER_ITEM,
+  storeConfig,
+} from "./commerce.js";
 import type {
+  CreateOrderInput,
+  CustomerInput,
   ErrorEnvelope,
   Order,
   OrderItem,
   OrderItemInput,
+  ShippingAddressInput,
 } from "./types.js";
 
 const MAX_BODY_BYTES = 16 * 1024;
@@ -122,75 +130,87 @@ async function readJsonBody(request: IncomingMessage): Promise<unknown> {
   }
 }
 
-function parseItems(body: unknown): OrderItemInput[] {
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
-    throw new HttpError(400, "INVALID_ORDER", "Order body must be an object.");
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function exactKeys(
+  value: Record<string, unknown>,
+  required: string[],
+  optional: string[] = [],
+): boolean {
+  const keys = Object.keys(value).sort();
+  const allowed = new Set([...required, ...optional]);
+  return (
+    required.every((key) => keys.includes(key)) &&
+    keys.every((key) => allowed.has(key))
+  );
+}
+
+function normalizedText(
+  value: unknown,
+  field: string,
+  minimum: number,
+  maximum: number,
+): string {
+  if (typeof value !== "string") {
+    throw new HttpError(400, "INVALID_ORDER", `${field} must be text.`);
   }
-  const keys = Object.keys(body);
-  if (keys.length !== 1 || keys[0] !== "items") {
+  const normalized = value.trim().replace(/\s+/g, " ");
+  if (normalized.length < minimum || normalized.length > maximum) {
     throw new HttpError(
       400,
       "INVALID_ORDER",
-      "Order body must contain only items.",
+      `${field} must contain ${minimum} to ${maximum} characters.`,
     );
   }
-  const items = (body as { items?: unknown }).items;
-  if (!Array.isArray(items) || items.length < 1 || items.length > 20) {
+  return normalized;
+}
+
+function parseItems(items: unknown): OrderItemInput[] {
+  if (
+    !Array.isArray(items) ||
+    items.length < 1 ||
+    items.length > MAX_ORDER_LINES
+  ) {
     throw new HttpError(
       400,
       "INVALID_ITEMS",
-      "Items must contain between 1 and 20 rows.",
+      `Items must contain between 1 and ${MAX_ORDER_LINES} rows.`,
     );
   }
 
   const merged = new Map<string, number>();
   for (const rawItem of items) {
-    if (!rawItem || typeof rawItem !== "object" || Array.isArray(rawItem)) {
-      throw new HttpError(400, "INVALID_ITEM", "Each item must be an object.");
-    }
-    const itemKeys = Object.keys(rawItem).sort();
-    if (itemKeys.join(",") !== "productId,quantity") {
+    if (!isRecord(rawItem) || !exactKeys(rawItem, ["productId", "quantity"])) {
       throw new HttpError(
         400,
         "INVALID_ITEM",
         "Each item must contain productId and quantity only.",
       );
     }
-    const { productId, quantity } = rawItem as {
-      productId?: unknown;
-      quantity?: unknown;
-    };
-    if (
-      typeof productId !== "string" ||
-      productId.trim().length < 1 ||
-      productId.length > 100
-    ) {
-      throw new HttpError(
-        400,
-        "INVALID_PRODUCT_ID",
-        "productId must be a non-empty string.",
-      );
-    }
+    const productId = normalizedText(rawItem.productId, "productId", 1, 100);
+    const quantity = rawItem.quantity;
     if (
       !Number.isInteger(quantity) ||
       (quantity as number) < 1 ||
-      (quantity as number) > 99
+      (quantity as number) > MAX_QUANTITY_PER_ITEM
     ) {
       throw new HttpError(
         400,
         "INVALID_QUANTITY",
-        "quantity must be an integer between 1 and 99.",
+        `quantity must be an integer between 1 and ${MAX_QUANTITY_PER_ITEM}.`,
       );
     }
-    const normalizedId = productId.trim();
-    const combined = (merged.get(normalizedId) ?? 0) + (quantity as number);
-    if (combined > 99)
+    const combined = (merged.get(productId) ?? 0) + (quantity as number);
+    if (combined > MAX_QUANTITY_PER_ITEM) {
       throw new HttpError(
         400,
         "INVALID_QUANTITY",
-        "Combined quantity cannot exceed 99.",
+        `Combined quantity cannot exceed ${MAX_QUANTITY_PER_ITEM}.`,
       );
-    merged.set(normalizedId, combined);
+    }
+    merged.set(productId, combined);
   }
 
   return [...merged.entries()]
@@ -198,8 +218,133 @@ function parseItems(body: unknown): OrderItemInput[] {
     .sort((left, right) => left.productId.localeCompare(right.productId));
 }
 
-function payloadHash(items: OrderItemInput[]): string {
-  return createHash("sha256").update(JSON.stringify({ items })).digest("hex");
+function parseOrder(body: unknown): CreateOrderInput {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    throw new HttpError(400, "INVALID_ORDER", "Order body must be an object.");
+  }
+  const record = body as Record<string, unknown>;
+  if (
+    !exactKeys(record, [
+      "customer",
+      "items",
+      "shippingAddress",
+      "shippingMethod",
+    ])
+  ) {
+    throw new HttpError(
+      400,
+      "INVALID_ORDER",
+      "Order body contains missing or unsupported fields.",
+    );
+  }
+
+  if (
+    !isRecord(record.customer) ||
+    !exactKeys(record.customer, ["email", "name"])
+  ) {
+    throw new HttpError(
+      400,
+      "INVALID_CUSTOMER",
+      "Customer must contain name and email only.",
+    );
+  }
+  const customer: CustomerInput = {
+    name: normalizedText(record.customer.name, "customer.name", 2, 80),
+    email: normalizedText(
+      record.customer.email,
+      "customer.email",
+      5,
+      120,
+    ).toLowerCase(),
+  };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)) {
+    throw new HttpError(400, "INVALID_CUSTOMER", "Customer email is invalid.");
+  }
+
+  if (
+    !isRecord(record.shippingAddress) ||
+    !exactKeys(
+      record.shippingAddress,
+      ["city", "countryCode", "line1", "postalCode", "region"],
+      ["line2"],
+    )
+  ) {
+    throw new HttpError(
+      400,
+      "INVALID_SHIPPING_ADDRESS",
+      "Shipping address contains missing or unsupported fields.",
+    );
+  }
+  if (record.shippingAddress.countryCode !== "US") {
+    throw new HttpError(
+      400,
+      "INVALID_SHIPPING_ADDRESS",
+      "Only US demo addresses are supported.",
+    );
+  }
+  const line2 =
+    record.shippingAddress.line2 === undefined ||
+    record.shippingAddress.line2 === ""
+      ? undefined
+      : normalizedText(
+          record.shippingAddress.line2,
+          "shippingAddress.line2",
+          1,
+          120,
+        );
+  const shippingAddress: ShippingAddressInput = {
+    line1: normalizedText(
+      record.shippingAddress.line1,
+      "shippingAddress.line1",
+      3,
+      120,
+    ),
+    ...(line2 === undefined ? {} : { line2 }),
+    city: normalizedText(
+      record.shippingAddress.city,
+      "shippingAddress.city",
+      2,
+      80,
+    ),
+    region: normalizedText(
+      record.shippingAddress.region,
+      "shippingAddress.region",
+      2,
+      40,
+    ).toUpperCase(),
+    postalCode: normalizedText(
+      record.shippingAddress.postalCode,
+      "shippingAddress.postalCode",
+      5,
+      10,
+    ),
+    countryCode: "US",
+  };
+  if (!/^\d{5}(?:-\d{4})?$/.test(shippingAddress.postalCode)) {
+    throw new HttpError(
+      400,
+      "INVALID_SHIPPING_ADDRESS",
+      "US postal code must use 12345 or 12345-6789 format.",
+    );
+  }
+  if (record.shippingMethod !== "standard") {
+    throw new HttpError(
+      400,
+      "INVALID_SHIPPING_METHOD",
+      "Only standard delivery is available.",
+    );
+  }
+
+  return {
+    items: parseItems(record.items),
+    customer,
+    shippingAddress,
+    shippingMethod: "standard",
+  };
+}
+
+function payloadHash(order: CreateOrderInput): string {
+  return createHash("sha256").update(JSON.stringify(order)).digest("hex");
 }
 
 function validateIdempotencyKey(request: IncomingMessage): string {
@@ -224,13 +369,13 @@ export function createOrderServer(options: OrderServerOptions): Server {
   let ready = true;
 
   async function createOrder(
-    items: OrderItemInput[],
+    input: CreateOrderInput,
     key: string,
     hash: string,
     requestId: string,
   ): Promise<Order> {
     const products = await Promise.all(
-      items.map(async (item) => {
+      input.items.map(async (item) => {
         const product = await options.catalogClient.getProduct(
           item.productId,
           requestId,
@@ -241,17 +386,39 @@ export function createOrderServer(options: OrderServerOptions): Server {
             "INVALID_PRODUCT",
             `Product ${item.productId} does not exist.`,
           );
+        if (product.availability === "out_of_stock") {
+          throw new HttpError(
+            409,
+            "PRODUCT_OUT_OF_STOCK",
+            `${product.name} is currently out of stock.`,
+          );
+        }
+        if (item.quantity > product.inventoryQuantity) {
+          throw new HttpError(
+            409,
+            "INSUFFICIENT_INVENTORY",
+            `Only ${product.inventoryQuantity} units of ${product.name} are available.`,
+          );
+        }
         return { item, product };
       }),
     );
     const orderItems: OrderItem[] = products.map(({ item, product }) => ({
       productId: item.productId,
       quantity: item.quantity,
+      sku: product.sku,
       name: product.name,
+      image: product.images[0]?.src ?? "",
       unitPriceCents: product.priceCents,
       lineTotalCents: product.priceCents * item.quantity,
     }));
-    return store.create(orderItems, key, hash);
+    return store.create(
+      orderItems,
+      input.customer,
+      input.shippingAddress,
+      key,
+      hash,
+    );
   }
 
   const server = createServer(
@@ -304,6 +471,16 @@ export function createOrderServer(options: OrderServerOptions): Server {
           return;
         }
 
+        if (request.method === "GET" && path === "/api/store-config") {
+          sendJson(
+            response,
+            200,
+            { config: storeConfig(store.ttlMs) },
+            requestId,
+          );
+          return;
+        }
+
         if (!hasValidApiKey(request, options.apiKey)) {
           throw new HttpError(
             401,
@@ -314,8 +491,8 @@ export function createOrderServer(options: OrderServerOptions): Server {
 
         if (request.method === "POST" && path === "/api/orders") {
           const key = validateIdempotencyKey(request);
-          const items = parseItems(await readJsonBody(request));
-          const hash = payloadHash(items);
+          const input = parseOrder(await readJsonBody(request));
+          const hash = payloadHash(input);
           const stored = store.lookupIdempotency(key, hash);
           if (stored.kind === "conflict")
             throw new HttpError(
@@ -351,7 +528,7 @@ export function createOrderServer(options: OrderServerOptions): Server {
             return;
           }
 
-          const promise = createOrder(items, key, hash, requestId);
+          const promise = createOrder(input, key, hash, requestId);
           inFlight.set(key, { hash, promise });
           try {
             const order = await promise;

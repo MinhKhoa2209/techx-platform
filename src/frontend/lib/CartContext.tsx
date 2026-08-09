@@ -8,12 +8,18 @@ import {
   useMemo,
   useReducer,
   useRef,
+  useState,
   type ReactNode,
 } from "react";
-import { addToCart, loadCart, saveCart, updateCartQuantity } from "./cart";
+import {
+  addToCart,
+  loadCart,
+  reconcileCart,
+  saveCart,
+  updateCartQuantity,
+} from "./cart";
+import { useStorefront } from "./StorefrontContext";
 import type { CartItem, Product } from "./types";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface CartState {
   items: CartItem[];
@@ -22,32 +28,40 @@ interface CartState {
 
 type CartAction =
   | { type: "INIT"; items: CartItem[] }
-  | { type: "ADD"; product: Product; quantity: number }
-  | { type: "UPDATE_QTY"; productId: string; quantity: number }
+  | { type: "REPLACE"; items: CartItem[] }
+  | { type: "ADD"; product: Product; quantity: number; maximum: number }
+  | { type: "UPDATE_QTY"; productId: string; quantity: number; maximum: number }
   | { type: "REMOVE"; productId: string }
   | { type: "CLEAR" };
 
 interface CartContextValue {
   items: CartItem[];
   itemCount: number;
-  totalCents: number;
+  subtotalCents: number;
   ready: boolean;
-  addItem: (product: Product, quantity: number) => void;
+  reconciliationNotice: boolean;
+  addItem: (product: Product, quantity?: number) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   removeItem: (productId: string) => void;
   clearCart: () => void;
+  dismissReconciliationNotice: () => void;
 }
-
-// ─── Reducer ──────────────────────────────────────────────────────────────────
 
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case "INIT":
       return { items: action.items, ready: true };
+    case "REPLACE":
+      return { ...state, items: action.items };
     case "ADD":
       return {
         ...state,
-        items: addToCart(state.items, action.product, action.quantity),
+        items: addToCart(
+          state.items,
+          action.product,
+          action.quantity,
+          action.maximum,
+        ),
       };
     case "UPDATE_QTY":
       return {
@@ -56,12 +70,15 @@ function cartReducer(state: CartState, action: CartAction): CartState {
           state.items,
           action.productId,
           action.quantity,
+          action.maximum,
         ),
       };
     case "REMOVE":
       return {
         ...state,
-        items: state.items.filter((i) => i.product.id !== action.productId),
+        items: state.items.filter(
+          (item) => item.product.id !== action.productId,
+        ),
       };
     case "CLEAR":
       return { ...state, items: [] };
@@ -70,72 +87,99 @@ function cartReducer(state: CartState, action: CartAction): CartState {
   }
 }
 
-// ─── Context ──────────────────────────────────────────────────────────────────
-
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { products, catalogState, config } = useStorefront();
   const [state, dispatch] = useReducer(cartReducer, {
     items: [],
     ready: false,
   });
+  const [reconciliationNotice, setReconciliationNotice] = useState(false);
   const initialised = useRef(false);
+  const reconciledCatalog = useRef(false);
 
-  // Load from sessionStorage on mount (client only)
   useEffect(() => {
     if (initialised.current) return;
     initialised.current = true;
-    const stored = loadCart(window.sessionStorage);
-    dispatch({ type: "INIT", items: stored });
+    dispatch({ type: "INIT", items: loadCart(window.sessionStorage) });
   }, []);
 
-  // Persist to sessionStorage whenever items change (after init)
   useEffect(() => {
-    if (!state.ready) return;
-    saveCart(window.sessionStorage, state.items);
+    if (
+      !state.ready ||
+      catalogState !== "success" ||
+      !config ||
+      reconciledCatalog.current
+    ) {
+      return;
+    }
+    reconciledCatalog.current = true;
+    const reconciled = reconcileCart(
+      state.items,
+      products,
+      config.maxQuantityPerItem,
+    );
+    if (reconciled.changed) {
+      dispatch({ type: "REPLACE", items: reconciled.items });
+      setReconciliationNotice(true);
+    }
+  }, [catalogState, config, products, state.items, state.ready]);
+
+  useEffect(() => {
+    if (state.ready) saveCart(window.sessionStorage, state.items);
   }, [state.items, state.ready]);
 
-  const itemCount = state.items.reduce((sum, i) => sum + i.quantity, 0);
-  const totalCents = state.items.reduce(
-    (sum, i) => sum + i.product.priceCents * i.quantity,
+  const maximum = config?.maxQuantityPerItem ?? Number.MAX_SAFE_INTEGER;
+  const itemCount = state.items.reduce((sum, item) => sum + item.quantity, 0);
+  const subtotalCents = state.items.reduce(
+    (sum, item) => sum + item.product.priceCents * item.quantity,
     0,
   );
 
   const addItem = useCallback(
-    (product: Product, quantity: number) =>
-      dispatch({ type: "ADD", product, quantity }),
-    [],
+    (product: Product, quantity = 1) =>
+      dispatch({ type: "ADD", product, quantity, maximum }),
+    [maximum],
   );
   const updateQuantity = useCallback(
     (productId: string, quantity: number) =>
-      dispatch({ type: "UPDATE_QTY", productId, quantity }),
-    [],
+      dispatch({ type: "UPDATE_QTY", productId, quantity, maximum }),
+    [maximum],
   );
   const removeItem = useCallback(
     (productId: string) => dispatch({ type: "REMOVE", productId }),
     [],
   );
   const clearCart = useCallback(() => dispatch({ type: "CLEAR" }), []);
+  const dismissReconciliationNotice = useCallback(
+    () => setReconciliationNotice(false),
+    [],
+  );
 
   const value = useMemo<CartContextValue>(
     () => ({
       items: state.items,
       itemCount,
-      totalCents,
+      subtotalCents,
       ready: state.ready,
+      reconciliationNotice,
       addItem,
       updateQuantity,
       removeItem,
       clearCart,
+      dismissReconciliationNotice,
     }),
     [
       addItem,
       clearCart,
+      dismissReconciliationNotice,
       itemCount,
+      reconciliationNotice,
       removeItem,
       state.items,
       state.ready,
-      totalCents,
+      subtotalCents,
       updateQuantity,
     ],
   );
@@ -144,7 +188,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 }
 
 export function useCart(): CartContextValue {
-  const ctx = useContext(CartContext);
-  if (!ctx) throw new Error("useCart must be used inside <CartProvider>");
-  return ctx;
+  const context = useContext(CartContext);
+  if (!context) throw new Error("useCart must be used inside CartProvider");
+  return context;
 }

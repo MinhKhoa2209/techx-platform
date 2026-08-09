@@ -1,6 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 
-type BadgeVariant = "navy" | "success" | "danger" | "warning" | "teal";
+type BadgeVariant = "neutral" | "success" | "danger" | "warning" | "teal";
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   children: ReactNode;
@@ -9,7 +9,7 @@ interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 
 export default function Badge({
   children,
-  variant = "navy",
+  variant = "neutral",
   className = "",
   ...props
 }: BadgeProps) {

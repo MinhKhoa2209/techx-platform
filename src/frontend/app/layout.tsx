@@ -3,8 +3,10 @@ import type { ReactNode } from "react";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/lib/CartContext";
+import { StorefrontProvider } from "@/lib/StorefrontContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { SITE } from "@/lib/site-config";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -15,11 +17,10 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: "TechX Store — See Further. Go Beyond.",
-    template: "%s | TechX Store",
+    default: SITE.name,
+    template: `%s | ${SITE.name}`,
   },
-  description:
-    "Shop premium astronomy gear: telescopes, binoculars, filters & accessories. Powered by microservices on EKS.",
+  description: SITE.description,
 };
 
 export default function RootLayout({
@@ -28,11 +29,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={plusJakartaSans.variable}>
       <body>
-        <CartProvider>
-          <Header />
-          <main>{children}</main>
-          <Footer />
-        </CartProvider>
+        <StorefrontProvider>
+          <CartProvider>
+            <Header />
+            <main id="main-content">{children}</main>
+            <Footer />
+          </CartProvider>
+        </StorefrontProvider>
       </body>
     </html>
   );

@@ -34,7 +34,19 @@ while ((Get-Date) -lt $deadline) {
 if ($errors -ne 0) { throw "Steady traffic produced $errors errors." }
 
 $catalog = Invoke-RestMethod -Uri "$BaseUrl/api/products" -TimeoutSec 5
-$body = @{ items = @(@{ productId = $catalog.products[0].id; quantity = 1 }) } | ConvertTo-Json -Depth 4
+$selectedProduct = $catalog.products | Where-Object { $_.availability -ne 'out_of_stock' } | Select-Object -First 1
+$body = @{
+  items = @(@{ productId = $selectedProduct.id; quantity = 1 })
+  customer = @{ name = 'Container Soak'; email = 'soak@example.com' }
+  shippingAddress = @{
+    line1 = '100 Soak Street'
+    city = 'Seattle'
+    region = 'WA'
+    postalCode = '98101'
+    countryCode = 'US'
+  }
+  shippingMethod = 'standard'
+} | ConvertTo-Json -Depth 6
 $statuses = 1..$BurstRequests | ForEach-Object -Parallel {
   try {
     $response = Invoke-WebRequest -Method Post -Uri "$using:BaseUrl/api/orders" -Headers @{ 'Idempotency-Key' = "burst-$([guid]::NewGuid())" } -ContentType 'application/json' -Body $using:body -TimeoutSec 10 -SkipHttpErrorCheck

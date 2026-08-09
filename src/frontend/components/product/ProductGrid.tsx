@@ -1,6 +1,7 @@
 import ProductCard from "./ProductCard";
 import SkeletonCard from "@/components/ui/SkeletonCard";
 import EmptyState from "@/components/ui/EmptyState";
+import { CONTENT } from "@/lib/site-config";
 import type { Product } from "@/lib/types";
 
 interface ProductGridProps {
@@ -18,8 +19,8 @@ export default function ProductGrid({
   products,
   loading = false,
   skeletonCount = 6,
-  emptyTitle = "No products found",
-  emptyDesc = "Try adjusting your filters or check back later.",
+  emptyTitle = CONTENT.common.noProducts,
+  emptyDesc = CONTENT.common.noProductsBody,
   emptyAction,
   emptyActionHref,
   onEmptyAction,
@@ -29,10 +30,10 @@ export default function ProductGrid({
       <div
         className="product-grid"
         aria-busy="true"
-        aria-label="Loading products"
+        aria-label={CONTENT.catalog.loadingProducts}
       >
-        {Array.from({ length: skeletonCount }, (_, i) => (
-          <SkeletonCard key={i} />
+        {Array.from({ length: skeletonCount }, (_, index) => (
+          <SkeletonCard key={index} />
         ))}
       </div>
     );
@@ -41,7 +42,7 @@ export default function ProductGrid({
   if (products.length === 0) {
     return (
       <EmptyState
-        icon="🔭"
+        icon="scope"
         title={emptyTitle}
         description={emptyDesc}
         {...(emptyAction ? { actionLabel: emptyAction } : {})}

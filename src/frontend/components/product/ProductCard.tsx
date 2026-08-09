@@ -2,123 +2,89 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCart } from "@/lib/CartContext";
-import { formatUsd } from "@/lib/format";
-import QuantityStepper from "@/components/ui/QuantityStepper";
 import Badge from "@/components/ui/Badge";
+import Icon from "@/components/ui/Icon";
+import { useCart } from "@/lib/CartContext";
+import { discountPercent, formatUsd } from "@/lib/format";
+import {
+  AVAILABILITY_CONTENT,
+  CONTENT,
+  ROUTES,
+  UI_TIMINGS,
+} from "@/lib/site-config";
+import { useStorefront } from "@/lib/StorefrontContext";
 import type { Product } from "@/lib/types";
 
-interface ProductCardProps {
-  product: Product;
-  onAddToCart?: (product: Product, quantity: number) => void;
-}
-
-export default function ProductCard({
-  product,
-  onAddToCart,
-}: ProductCardProps) {
-  const router = useRouter();
+export default function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
-  const [quantity, setQuantity] = useState(1);
-  const [wishlisted, setWishlisted] = useState(false);
+  const { categories } = useStorefront();
   const [added, setAdded] = useState(false);
-  const detailHref = `/product/${product.id}`;
-  const originalPrice = Math.round(product.priceCents * 1.15);
+  const category = categories.find((item) => item.id === product.category);
+  const availability = AVAILABILITY_CONTENT[product.availability];
+  const discount = discountPercent(
+    product.priceCents,
+    product.compareAtPriceCents,
+  );
+  const unavailable = product.availability === "out_of_stock";
 
-  function openCard(event: React.MouseEvent<HTMLElement>) {
-    const target = event.target as HTMLElement;
-    if (!target.closest("a, button")) router.push(detailHref);
-  }
-
-  function handleAddToCart(event: React.MouseEvent) {
-    event.stopPropagation();
-    (onAddToCart ?? addItem)(product, quantity);
+  function add() {
+    addItem(product);
     setAdded(true);
-    setQuantity(1);
-    setTimeout(() => setAdded(false), 1500);
-  }
-
-  function handleWishlist(event: React.MouseEvent) {
-    event.stopPropagation();
-    setWishlisted((previous) => !previous);
+    window.setTimeout(() => setAdded(false), UI_TIMINGS.transientFeedbackMs);
   }
 
   return (
-    <article className="product-card" onClick={openCard}>
-      <div className="product-image-wrap">
-        <Badge className="product-badge">Featured</Badge>
-        <button
-          className={`wishlist-btn${wishlisted ? " active" : ""}`}
-          onClick={handleWishlist}
-          aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
-          type="button"
-        >
-          {wishlisted ? "♥" : "♡"}
-        </button>
-        <Link href={detailHref} aria-label={`View ${product.name}`}>
-          <img
-            src={product.image}
-            alt={product.name}
-            className="product-img"
-            loading="lazy"
-          />
-        </Link>
-      </div>
-
-      <div className="product-content">
-        <h3 className="product-title">
-          <Link href={detailHref}>{product.name}</Link>
-        </h3>
-        <div className="product-rating">
-          <span className="product-stars" aria-label="4.5 out of 5 stars">
-            ★★★★☆
-          </span>
-          <span className="product-rating-count">(124)</span>
-        </div>
-        <div className="price-row">
-          <span className="current-price">{formatUsd(product.priceCents)}</span>
-          <span className="original-price">{formatUsd(originalPrice)}</span>
-          <Badge variant="danger" style={{ fontSize: 10 }}>
-            −13%
+    <article className="product-card">
+      <Link className="product-card-media" href={ROUTES.product(product.id)}>
+        <img
+          src={product.images[0]!.src}
+          alt={product.images[0]!.alt}
+          width={640}
+          height={480}
+          loading="lazy"
+        />
+        {discount !== null && (
+          <Badge variant="danger">{CONTENT.product.save(discount)}</Badge>
+        )}
+      </Link>
+      <div className="product-card-body">
+        <div className="product-card-meta">
+          <span>{category?.label}</span>
+          <Badge
+            variant={
+              availability.tone === "neutral" ? "neutral" : availability.tone
+            }
+          >
+            {availability.label}
           </Badge>
         </div>
-        <p className="product-desc">{product.description}</p>
-        <div className="product-actions">
-          <QuantityStepper
-            value={quantity}
-            onChange={setQuantity}
-            min={1}
-            max={99}
-          />
+        <h3>
+          <Link href={ROUTES.product(product.id)}>{product.name}</Link>
+        </h3>
+        <p>{product.shortDescription}</p>
+        <div className="product-price-row">
+          <strong>{formatUsd(product.priceCents)}</strong>
+          {product.compareAtPriceCents && (
+            <del>{formatUsd(product.compareAtPriceCents)}</del>
+          )}
+        </div>
+        <div className="product-card-actions">
+          <Link className="btn btn-secondary" href={ROUTES.product(product.id)}>
+            {CONTENT.common.viewProduct}
+          </Link>
           <button
-            className="add-to-cart-btn"
+            className="btn btn-primary"
             type="button"
-            onClick={handleAddToCart}
-            disabled={added}
-            aria-label={`Add ${product.name} to cart`}
+            onClick={add}
+            disabled={unavailable || added}
           >
             {added ? (
-              "✓ Added!"
-            ) : (
               <>
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <path d="M16 10a4 4 0 0 1-8 0" />
-                </svg>
-                Add to Cart
+                <Icon name="check" size={17} />
+                {CONTENT.common.added}
               </>
+            ) : (
+              CONTENT.common.addToCart
             )}
           </button>
         </div>

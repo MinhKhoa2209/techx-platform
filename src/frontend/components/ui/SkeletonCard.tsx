@@ -6,7 +6,7 @@ export default function SkeletonCard() {
         <div className="skeleton-line w-full h-6" />
         <div className="skeleton-line w-3-4" />
         <div className="skeleton-line w-1-2" />
-        <div className="skeleton-line w-full h-8" style={{ marginTop: 8 }} />
+        <div className="skeleton-line w-full h-8 skeleton-action" />
       </div>
     </div>
   );

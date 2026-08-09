@@ -1,210 +1,219 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useCart } from "@/lib/CartContext";
-import { formatUsd } from "@/lib/format";
-import QuantityStepper from "@/components/ui/QuantityStepper";
+import { useParams } from "next/navigation";
 import ProductGrid from "@/components/product/ProductGrid";
-import type { Product } from "@/lib/types";
-
-type State = "loading" | "success" | "error";
+import Badge from "@/components/ui/Badge";
+import Icon from "@/components/ui/Icon";
+import QuantityStepper from "@/components/ui/QuantityStepper";
+import { relatedProducts } from "@/lib/catalog";
+import { useCart } from "@/lib/CartContext";
+import { discountPercent, formatUsd } from "@/lib/format";
+import {
+  AVAILABILITY_CONTENT,
+  CONTENT,
+  ROUTES,
+  UI_TIMINGS,
+} from "@/lib/site-config";
+import { useStorefront } from "@/lib/StorefrontContext";
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { products, categories, catalogState, config } = useStorefront();
   const { addItem } = useCart();
-
-  const [product, setProduct] = useState<Product | null>(null);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [state, setState] = useState<State>("loading");
   const [quantity, setQuantity] = useState(1);
-  const [toast, setToast] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [added, setAdded] = useState(false);
+  const product = products.find((item) => item.id === id);
+  const related = useMemo(
+    () => (product ? relatedProducts(products, product) : []),
+    [product, products],
+  );
 
-  useEffect(() => {
-    setState("loading");
-    Promise.all([
-      fetch(`/api/products/${id}`, { cache: "no-store" }).then(
-        async (response) => {
-          if (!response.ok)
-            throw new Error(`Product returned ${response.status}`);
-          return response.json();
-        },
-      ),
-      fetch("/api/products", { cache: "no-store" }).then(async (response) => {
-        if (!response.ok)
-          throw new Error(`Catalog returned ${response.status}`);
-        return response.json();
-      }),
-    ])
-      .then(
-        ([single, all]: [{ product: Product }, { products: Product[] }]) => {
-          setProduct(single.product);
-          setAllProducts(all.products ?? []);
-          setState("success");
-        },
-      )
-      .catch(() => setState("error"));
-  }, [id]);
-
-  function handleAddToCart() {
-    if (!product) return;
-    addItem(product, quantity);
-    setToast(true);
-    setTimeout(() => setToast(false), 2500);
-  }
-
-  if (state === "loading") {
+  if (catalogState === "loading")
     return (
-      <div className="product-detail-page">
-        <div className="product-detail-grid">
-          <div
-            className="product-gallery"
-            style={{ background: "var(--surface-2)", minHeight: 400 }}
-          />
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div className="skeleton-line w-3-4 h-8" />
-            <div className="skeleton-line w-1-2" />
-            <div className="skeleton-line w-full" />
-            <div className="skeleton-line w-full" />
-          </div>
-        </div>
+      <div className="page-loading" aria-busy="true">
+        {CONTENT.common.loading}
       </div>
     );
-  }
-
-  if (state === "error" || !product) {
+  if (!product) {
     return (
-      <div className="product-detail-page">
-        <div className="alert alert-error" role="alert">
-          <span>⚠️</span>
-          <div>
-            <strong>Product not found</strong>
-            <p>This product may have been removed or the ID is invalid.</p>
-          </div>
-        </div>
-        <Link
-          href="/products"
-          className="btn btn-primary"
-          style={{ marginTop: 20 }}
-        >
-          Back to Products
+      <div className="section-shell product-not-found">
+        <h1>{CONTENT.product.notFound}</h1>
+        <p>{CONTENT.product.notFoundBody}</p>
+        <Link className="btn btn-primary" href={ROUTES.products}>
+          {CONTENT.common.shopNow}
         </Link>
       </div>
     );
   }
 
-  const originalPrice = Math.round(product.priceCents * 1.15);
-  const related = allProducts.filter((p) => p.id !== product.id).slice(0, 3);
+  const category = categories.find((item) => item.id === product.category);
+  const availability = AVAILABILITY_CONTENT[product.availability];
+  const maximum = Math.min(
+    product.inventoryQuantity,
+    config?.maxQuantityPerItem ?? product.inventoryQuantity,
+  );
+  const discount = discountPercent(
+    product.priceCents,
+    product.compareAtPriceCents,
+  );
+  const unavailable = product.availability === "out_of_stock";
+  const selectedProduct = product;
+
+  function add() {
+    addItem(selectedProduct, quantity);
+    setAdded(true);
+    window.setTimeout(() => setAdded(false), UI_TIMINGS.addToCartFeedbackMs);
+  }
 
   return (
-    <div className="product-detail-page">
-      {toast && (
-        <div className="toast" role="status">
-          <span className="toast-icon">✓</span>
-          Added to cart!
-        </div>
-      )}
-
-      <nav className="breadcrumb" aria-label="Breadcrumb">
-        <Link href="/">Home</Link>
-        <span className="breadcrumb-sep">/</span>
-        <Link href="/products">Products</Link>
-        <span className="breadcrumb-sep">/</span>
-        <span style={{ color: "var(--ink)" }}>{product.name}</span>
+    <div className="product-page section-shell">
+      <nav className="breadcrumbs" aria-label={CONTENT.common.breadcrumb}>
+        <Link href={ROUTES.home}>{CONTENT.common.home}</Link>
+        <span>/</span>
+        <Link href={ROUTES.category(product.category)}>{category?.label}</Link>
+        <span>/</span>
+        <span aria-current="page">{product.name}</span>
       </nav>
-
-      <div className="product-detail-grid">
+      <section className="product-detail">
         <div className="product-gallery">
-          <img
-            src={product.image}
-            alt={product.name}
-            className="product-gallery-img"
-          />
-        </div>
-
-        <div className="product-info-col">
-          <h1 className="product-info-name">{product.name}</h1>
-
-          <div className="product-info-rating">
-            <span className="product-info-stars">★★★★☆</span>
-            <span className="product-info-rating-text">
-              4.5 out of 5 · 124 reviews
-            </span>
-          </div>
-
-          <div className="product-info-price-row">
-            <span className="product-info-price">
-              {formatUsd(product.priceCents)}
-            </span>
-            <span className="product-info-original">
-              {formatUsd(originalPrice)}
-            </span>
-            <span className="badge badge-danger">−13% OFF</span>
-          </div>
-
-          <div className="product-info-divider" />
-
-          <p className="product-info-desc">{product.description}</p>
-
-          <div>
-            <span className="badge badge-success">✓ In Stock</span>
-          </div>
-
-          <div className="product-qty-row">
-            <span className="product-qty-label">Quantity</span>
-            <QuantityStepper
-              value={quantity}
-              onChange={setQuantity}
-              min={1}
-              max={99}
+          <div className="product-main-image">
+            <img
+              src={product.images[selectedImage]!.src}
+              alt={product.images[selectedImage]!.alt}
+              width={640}
+              height={480}
             />
           </div>
-
-          <button
-            className="add-to-cart-main"
-            type="button"
-            onClick={handleAddToCart}
+          {product.images.length > 1 && (
+            <div className="product-thumbnails">
+              {product.images.map((image, index) => (
+                <button
+                  key={image.src}
+                  type="button"
+                  className={selectedImage === index ? "active" : undefined}
+                  onClick={() => setSelectedImage(index)}
+                  aria-label={CONTENT.product.viewImage(index + 1)}
+                >
+                  <img src={image.src} alt="" width={640} height={480} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="product-information">
+          <p className="eyebrow">{category?.label}</p>
+          <h1>{product.name}</h1>
+          <p className="product-sku">
+            {CONTENT.product.sku}: {product.sku}
+          </p>
+          <div className="product-detail-price">
+            <strong>{formatUsd(product.priceCents)}</strong>
+            {product.compareAtPriceCents && (
+              <del>{formatUsd(product.compareAtPriceCents)}</del>
+            )}
+            {discount !== null && (
+              <Badge variant="danger">{CONTENT.product.save(discount)}</Badge>
+            )}
+          </div>
+          <p className="product-description">{product.description}</p>
+          <Badge
+            variant={
+              availability.tone === "neutral" ? "neutral" : availability.tone
+            }
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <path d="M16 10a4 4 0 0 1-8 0" />
-            </svg>
-            Add to Cart
-          </button>
-
-          <div className="shipping-info-box">
-            <div className="shipping-info-item">
-              ✅ Free shipping on orders over $50
+            {availability.label}
+          </Badge>
+          {product.availability === "low_stock" && (
+            <p className="stock-note">
+              {CONTENT.product.lowStock(product.inventoryQuantity)}
+            </p>
+          )}
+          <div className="purchase-panel">
+            {!unavailable ? (
+              <>
+                <div>
+                  <label>{CONTENT.product.quantity}</label>
+                  <QuantityStepper
+                    value={quantity}
+                    onChange={setQuantity}
+                    min={1}
+                    max={Math.max(1, maximum)}
+                    label={CONTENT.product.quantityFor(product.name)}
+                  />
+                </div>
+                <button
+                  className="btn btn-primary"
+                  type="button"
+                  onClick={add}
+                  disabled={added}
+                >
+                  {added ? (
+                    <>
+                      <Icon name="check" />
+                      {CONTENT.common.added}
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="cart" />
+                      {CONTENT.common.addToCart}
+                    </>
+                  )}
+                </button>
+              </>
+            ) : (
+              <p className="inline-warning">{CONTENT.product.unavailable}</p>
+            )}
+          </div>
+          <div className="product-promises">
+            <div>
+              <Icon name="truck" />
+              <span>
+                <strong>
+                  {config?.shippingMethods[0]?.label ??
+                    CONTENT.product.deliveryLoading}
+                </strong>
+                {config?.shippingMethods[0]?.description}
+              </span>
             </div>
-            <div className="shipping-info-item">
-              🔄 30-day return policy, no questions asked
-            </div>
-            <div className="shipping-info-item">
-              🛡 2-year manufacturer warranty included
+            <div>
+              <Icon name="shield" />
+              <span>
+                <strong>{CONTENT.product.demoCheckoutTitle}</strong>
+                {CONTENT.product.demoCheckoutBody}
+              </span>
             </div>
           </div>
         </div>
-      </div>
-
-      {related.length > 0 && (
-        <section className="related-section">
-          <h2 className="related-title">You Might Also Like</h2>
-          <div className="related-grid">
-            <ProductGrid products={related} />
-          </div>
-        </section>
+      </section>
+      <section
+        className="specification-section"
+        aria-labelledby="specification-title"
+      >
+        <header>
+          <p className="eyebrow">{CONTENT.product.specificationsEyebrow}</p>
+          <h2 id="specification-title">{CONTENT.product.specifications}</h2>
+        </header>
+        <dl>
+          {product.specifications.map((specification) => (
+            <div key={specification.label}>
+              <dt>{specification.label}</dt>
+              <dd>{specification.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+      <section className="related-section" aria-labelledby="related-title">
+        <h2 id="related-title">{CONTENT.product.related}</h2>
+        <ProductGrid products={related} skeletonCount={3} />
+      </section>
+      {added && (
+        <div className="toast" role="status">
+          <Icon name="check" />
+          {CONTENT.common.added}
+        </div>
       )}
     </div>
   );

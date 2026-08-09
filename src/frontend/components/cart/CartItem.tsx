@@ -1,48 +1,68 @@
 "use client";
 
 import Link from "next/link";
+import QuantityStepper from "@/components/ui/QuantityStepper";
+import Badge from "@/components/ui/Badge";
 import { useCart } from "@/lib/CartContext";
 import { formatUsd } from "@/lib/format";
-import QuantityStepper from "@/components/ui/QuantityStepper";
+import { AVAILABILITY_CONTENT, CONTENT, ROUTES } from "@/lib/site-config";
+import { useStorefront } from "@/lib/StorefrontContext";
 import type { CartItem as CartItemType } from "@/lib/types";
 
 export default function CartItem({ item }: { item: CartItemType }) {
   const { updateQuantity, removeItem } = useCart();
+  const { config } = useStorefront();
+  const availability = AVAILABILITY_CONTENT[item.product.availability];
+  const maximum = Math.min(
+    item.product.inventoryQuantity,
+    config?.maxQuantityPerItem ?? item.product.inventoryQuantity,
+  );
 
   return (
-    <div className="cart-item">
-      <img
-        src={item.product.image}
-        alt={item.product.name}
-        className="cart-item-img"
-      />
+    <article className="cart-item">
+      <Link href={ROUTES.product(item.product.id)} className="cart-item-image">
+        <img
+          src={item.product.images[0]!.src}
+          alt={item.product.images[0]!.alt}
+          width={640}
+          height={480}
+        />
+      </Link>
       <div className="cart-item-info">
-        <p className="cart-item-name">
-          <Link href={`/product/${item.product.id}`}>{item.product.name}</Link>
-        </p>
-        <p className="cart-item-unit-price">
-          {formatUsd(item.product.priceCents)} each
-        </p>
+        <span className="cart-item-sku">{item.product.sku}</span>
+        <h2>
+          <Link href={ROUTES.product(item.product.id)}>
+            {item.product.name}
+          </Link>
+        </h2>
+        <Badge
+          variant={
+            availability.tone === "neutral" ? "neutral" : availability.tone
+          }
+        >
+          {availability.label}
+        </Badge>
+        <span className="cart-item-unit-price">
+          {CONTENT.cart.unitPrice(formatUsd(item.product.priceCents))}
+        </span>
       </div>
       <div className="cart-item-controls">
         <QuantityStepper
           value={item.quantity}
-          onChange={(qty) => updateQuantity(item.product.id, qty)}
+          onChange={(quantity) => updateQuantity(item.product.id, quantity)}
           min={1}
-          max={99}
+          max={Math.max(1, maximum)}
+          label={CONTENT.product.quantityFor(item.product.name)}
         />
-        <span className="cart-item-line-price">
-          {formatUsd(item.product.priceCents * item.quantity)}
-        </span>
+        <strong>{formatUsd(item.product.priceCents * item.quantity)}</strong>
         <button
-          className="btn btn-danger"
           type="button"
+          className="text-button danger"
           onClick={() => removeItem(item.product.id)}
-          aria-label={`Remove ${item.product.name} from cart`}
         >
-          Remove
+          {CONTENT.cart.remove}
         </button>
       </div>
-    </div>
+    </article>
   );
 }

@@ -6,25 +6,29 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import { CartProvider, useCart } from "@/lib/CartContext";
 import { CART_STORAGE_KEY } from "@/lib/cart";
-import type { Product } from "@/lib/types";
+import { categoryFixture, configFixture, productFixture } from "./fixtures";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
-const product: Product = {
-  id: "nova-refractor",
-  name: "Nova Refractor",
-  description: "A compact telescope for clear nights.",
-  priceCents: 29_900,
-  image: "/products/nova-refractor.svg",
-};
+vi.mock("@/lib/StorefrontContext", () => ({
+  useStorefront: () => ({
+    products: [productFixture],
+    categories: [categoryFixture],
+    config: configFixture,
+    catalogState: "success",
+    configState: "success",
+    retryCatalog: vi.fn(),
+    retryConfig: vi.fn(),
+  }),
+}));
 
 function CartProbe() {
-  const { itemCount, totalCents, ready } = useCart();
+  const { itemCount, subtotalCents, ready } = useCart();
   return (
     <output data-testid="cart-state">
-      {ready ? `${itemCount}:${totalCents}` : "loading"}
+      {ready ? `${itemCount}:${subtotalCents}` : "loading"}
     </output>
   );
 }
@@ -36,37 +40,31 @@ describe("storefront shared UI", () => {
     render(
       <>
         <Button variant="danger">Remove</Button>
-        <Badge variant="success">In Stock</Badge>
+        <Badge variant="success">In stock</Badge>
       </>,
     );
-
     expect(screen.getByRole("button", { name: "Remove" })).toHaveClass(
       "btn-danger",
     );
-    expect(screen.getByText("In Stock")).toHaveClass("badge-success");
+    expect(screen.getByText("In stock")).toHaveClass("badge-success");
   });
 
-  it("adds selected product quantity to the persisted cart", async () => {
+  it("adds a catalog product to the persisted cart", async () => {
     const user = userEvent.setup();
     render(
       <CartProvider>
-        <ProductCard product={product} />
+        <ProductCard product={productFixture} />
         <CartProbe />
       </CartProvider>,
     );
-
     await waitFor(() =>
       expect(screen.getByTestId("cart-state")).toHaveTextContent("0:0"),
     );
-    await user.click(screen.getByRole("button", { name: "Increase quantity" }));
-    await user.click(
-      screen.getByRole("button", { name: `Add ${product.name} to cart` }),
-    );
-
-    expect(screen.getByTestId("cart-state")).toHaveTextContent("2:59800");
+    await user.click(screen.getByRole("button", { name: "Add to cart" }));
+    expect(screen.getByTestId("cart-state")).toHaveTextContent("1:10000");
     await waitFor(() =>
       expect(window.sessionStorage.getItem(CART_STORAGE_KEY)).toContain(
-        "nova-refractor",
+        productFixture.id,
       ),
     );
   });
