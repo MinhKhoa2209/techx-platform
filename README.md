@@ -159,6 +159,7 @@ docker compose build --pull
 docker compose up -d --wait
 ./scripts/container-smoke.ps1
 ./scripts/container-recovery.ps1
+./scripts/container-resilience.ps1
 ./scripts/container-soak.ps1 -DurationSeconds 60 -BurstRequests 30
 ./scripts/container-audit.ps1
 docker compose down --volumes --remove-orphans
@@ -168,6 +169,10 @@ The recovery check restarts Catalog, Order, and frontend one at a time and
 verifies that unrelated containers do not restart. The soak gate accepts `429`
 only during its intentional create-order burst. Order data loss after restarting
 Order is the documented in-memory-store limitation, not a recovery failure.
+The resilience gate concurrently repeats an idempotency key, correlates a safe
+request ID in Order logs, checks that logs do not expose the API key, forces a
+Catalog outage and bounded `503`, verifies recovery, then proves the documented
+loss of an existing order across an Order restart.
 None of these commands contacts AWS or creates a billable cloud resource.
 
 ## Attribution

@@ -15,6 +15,7 @@ $required = @(
   'src/frontend/package.json',
   'src/catalog-api/README.md',
   'src/order-api/README.md'
+  'scripts/container-resilience.ps1'
 )
 
 foreach ($path in $required) {
