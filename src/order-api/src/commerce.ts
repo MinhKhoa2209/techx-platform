@@ -22,7 +22,7 @@ export function storeConfig(orderTtlMs: number): StoreConfig {
       {
         id: "standard",
         label: "Standard delivery",
-        description: "Estimated in 3–5 business days (demo only)",
+        description: "Estimated in 3–5 business days",
       },
     ],
   };

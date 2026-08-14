@@ -9,6 +9,7 @@ import Icon from "@/components/ui/Icon";
 import { ApiClientError, createOrder } from "@/lib/api-client";
 import {
   createOrderInput,
+  createIdempotencyKey,
   EMPTY_CHECKOUT_FORM,
   validateCheckout,
   type CheckoutErrors,
@@ -112,7 +113,7 @@ export default function CheckoutPage() {
     const input = createOrderInput(form, items);
     const fingerprint = JSON.stringify(input);
     if (!attempt.current || attempt.current.fingerprint !== fingerprint) {
-      attempt.current = { fingerprint, key: crypto.randomUUID() };
+      attempt.current = { fingerprint, key: createIdempotencyKey() };
     }
     setSubmitting(true);
     setSubmitError("");
@@ -149,7 +150,7 @@ export default function CheckoutPage() {
       <header className="page-heading">
         <p className="eyebrow">{CONTENT.checkout.eyebrow}</p>
         <h1>{CONTENT.checkout.title}</h1>
-        <p>{CONTENT.checkout.demoPaymentBody}</p>
+        <p>{CONTENT.checkout.intro}</p>
       </header>
       <div className="checkout-layout">
         <form className="checkout-form" onSubmit={submit} noValidate>
@@ -175,11 +176,14 @@ export default function CheckoutPage() {
               </div>
             </div>
           </section>
-          <section className="demo-payment" aria-labelledby="payment-heading">
+          <section
+            className="checkout-assurance"
+            aria-labelledby="payment-heading"
+          >
             <Icon name="shield" size={26} />
             <div>
-              <h2 id="payment-heading">{CONTENT.checkout.demoPaymentTitle}</h2>
-              <p>{CONTENT.checkout.demoPaymentBody}</p>
+              <h2 id="payment-heading">{CONTENT.checkout.assuranceTitle}</h2>
+              <p>{CONTENT.checkout.assuranceBody}</p>
             </div>
           </section>
           {submitError && (

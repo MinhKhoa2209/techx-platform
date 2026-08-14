@@ -26,7 +26,7 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
     throw new ApiClientError(
       0,
       "NETWORK_ERROR",
-      "Could not reach the demo service.",
+      "Could not reach the order service.",
     );
   }
   const body = (await response.json().catch(() => ({}))) as

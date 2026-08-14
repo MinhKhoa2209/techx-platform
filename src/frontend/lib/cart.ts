@@ -1,6 +1,6 @@
 import type { CartItem, Product, StoreConfig } from "./types";
 
-export const CART_STORAGE_KEY = "techx-demo-cart-v2";
+export const CART_STORAGE_KEY = "techx-cart-v3";
 const CART_SCHEMA_VERSION = 2;
 const MAX_CART_LINES = 20;
 

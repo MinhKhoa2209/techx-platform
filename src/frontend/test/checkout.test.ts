@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createOrderInput,
+  createIdempotencyKey,
   EMPTY_CHECKOUT_FORM,
   isOrderId,
   validateCheckout,
@@ -52,5 +53,18 @@ describe("checkout contract", () => {
   it("validates complete order ids before lookup", () => {
     expect(isOrderId("ord_00000000-0000-4000-8000-000000000000")).toBe(true);
     expect(isOrderId("ord_partial")).toBe(false);
+  });
+
+  it("creates an idempotency key when randomUUID is unavailable on HTTP", () => {
+    const cryptoWithoutRandomUuid = {
+      getRandomValues: <T extends ArrayBufferView | null>(values: T): T => {
+        if (values instanceof Uint32Array) values.fill(0x1234abcd);
+        return values;
+      },
+    } as Pick<Crypto, "getRandomValues">;
+
+    expect(createIdempotencyKey(cryptoWithoutRandomUuid)).toMatch(
+      /^checkout-[a-z0-9]+-(1234abcd){4}$/,
+    );
   });
 });

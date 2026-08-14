@@ -15,17 +15,13 @@ export const ROUTES = {
 export const SITE = {
   name: "TechX Observatory Supply",
   shortName: "TechX",
-  mark: "TX",
   brandDescriptor: "Observatory Supply",
   tagline: "Better nights start with the right view.",
   description:
-    "A focused demo storefront for telescopes, binoculars and observing accessories.",
-  demoNotice:
-    "Demo storefront — no payment is collected and no physical order is shipped.",
+    "Curated telescopes, binoculars and observing accessories for clearer nights outdoors.",
 } as const;
 
 export const UI_STORAGE_KEYS = {
-  demoNoticeDismissed: "techx-demo-notice-dismissed",
   lastOrder: "techx-last-order-v2",
 } as const;
 
@@ -127,7 +123,6 @@ export const CONTENT = {
   },
   shell: {
     skipToContent: "Skip to content",
-    dismissDemoNotice: "Dismiss demo notice",
     openNavigation: "Open navigation",
     closeNavigation: "Close navigation",
     navigation: "Navigation",
@@ -136,11 +131,13 @@ export const CONTENT = {
     footerNavigation: "Footer navigation",
     searchProducts: "Search products",
     searchPlaceholder: "Search gear",
-    orderLookup: "Order lookup",
+    orderLookup: "Track order",
     cartLabel: (count: number) => `Cart with ${count} items`,
     footerShop: "Shop",
-    demoInformation: "Demo information",
-    temporaryOrders: "Portfolio storefront · Orders are temporary",
+    customerCare: "Customer care",
+    checkoutNotice: "Checkout does not request card details or arrange shipment.",
+    mobileMessage: "Expertly selected optics for clear nights and open trails.",
+    temporaryOrders: "Independent product experience · Order records are temporary",
   },
   home: {
     eyebrow: "Astronomy gear for curious nights",
@@ -156,8 +153,8 @@ export const CONTENT = {
     guideTitle: "Choose confidence over complexity.",
     guideBody:
       "Start with binoculars for flexibility, a refractor for quick lunar views, or a reflector when deep-sky detail matters most.",
-    paymentFact: "Payment",
-    paymentFactValue: "Never collected",
+    paymentFact: "Specialty",
+    paymentFactValue: "Optics & field gear",
     catalogFact: "Catalog",
     catalogFactValue: (count: number) => `${count} curated products`,
     deliveryFact: "Delivery",
@@ -188,10 +185,10 @@ export const CONTENT = {
         body: "Small accessories improve comfort and protect your optics.",
       },
     ],
-    principlesLabel: "Demo storefront principles",
+    principlesLabel: "Shopping assurances",
     principles: {
-      paymentTitle: "No payment collection",
-      paymentBody: "Safe portfolio checkout",
+      paymentTitle: "Simple checkout",
+      paymentBody: "No card details requested",
       deliveryTitle: "Transparent delivery rule",
       deliveryLoading: "Loading delivery details",
       pricingTitle: "Server-priced orders",
@@ -235,12 +232,12 @@ export const CONTENT = {
       "The product may have moved or no longer belongs to this catalog.",
     save: (percent: number) => `Save ${percent}%`,
     lowStock: (count: number) =>
-      `Only ${count} available in this demo catalog.`,
+      `Only ${count} available.`,
     quantityFor: (name: string) => `Quantity for ${name}`,
     viewImage: (index: number) => `View image ${index}`,
     deliveryLoading: "Delivery details loading",
-    demoCheckoutTitle: "Demo-safe checkout",
-    demoCheckoutBody: "No card details are requested.",
+    checkoutTitle: "Straightforward checkout",
+    checkoutBody: "No card details are requested.",
     specificationsEyebrow: "Built for the field",
   },
   cart: {
@@ -266,28 +263,29 @@ export const CONTENT = {
     freeDeliveryRemaining: (amount: string) =>
       `Add ${amount} for free standard delivery.`,
     unavailableItems: "Resolve unavailable items before checkout.",
-    demoNote: "No payment is collected in this demo.",
+    safetyNote: "No card details are requested during checkout.",
     unitPrice: (price: string) => `${price} each`,
     remove: "Remove",
   },
   checkout: {
-    title: "Demo checkout",
+    title: "Checkout",
     contact: "Contact",
     shipping: "Shipping address",
     review: "Review order",
-    demoPaymentTitle: "No payment required",
-    demoPaymentBody:
-      "This portfolio demo never asks for card details and will not charge or ship anything.",
-    placeOrder: "Place demo order",
-    submitting: "Placing demo order…",
+    intro: "Complete your contact and delivery details, then review the order before placing it.",
+    assuranceTitle: "No card details required",
+    assuranceBody:
+      "This project records the order flow only. It does not charge a card or arrange shipment.",
+    placeOrder: "Place order",
+    submitting: "Placing order…",
     back: "Back to cart",
     emptyTitle: "Nothing to check out",
-    eyebrow: "Safe portfolio flow",
+    eyebrow: "Secure order flow",
     country: "Country",
     countryValue: "United States",
     submitErrorTitle: "Order could not be placed",
     submitErrorSuffix: "Your cart and form are still here.",
-    fallbackError: "The demo order could not be placed.",
+    fallbackError: "The order could not be placed.",
     validation: {
       name: "Enter a name from 2 to 80 characters.",
       email: "Enter a valid email address.",
@@ -299,24 +297,24 @@ export const CONTENT = {
     },
   },
   order: {
-    confirmed: "Demo order confirmed",
+    confirmed: "Order confirmed",
     confirmedBody:
-      "The order flow completed successfully. No payment was taken and no parcel will be shipped.",
-    lookupTitle: "Look up a demo order",
+      "Your order was accepted. No payment was taken and no parcel will be shipped.",
+    lookupTitle: "Look up an order",
     lookupBody:
       "Paste an order ID to view its item snapshot and confirmation details while it remains in memory.",
     lookupAction: "Find order",
     notFound: "We could not find that order.",
     invalidId: "Enter a complete order ID beginning with ord_.",
-    eyebrow: "Temporary demo data",
+    eyebrow: "Order details",
     id: "Order ID",
     placeholder: "ord_00000000-0000-0000-0000-000000000000",
-    detailsLabel: "Demo order details",
+    detailsLabel: "Order details",
     created: (date: string) => `Created ${date}`,
     copied: "Copied",
     copyId: "Copy ID",
     quantity: (count: number) => `Quantity ${count}`,
-    deliveryWindow: "Demo delivery window",
+    deliveryWindow: "Delivery window",
     destination: "Destination",
     contact: "Contact",
     expiry: (date: string) => `Temporary order data expires ${date}.`,
@@ -332,20 +330,20 @@ export const CONTENT = {
 export const ORDER_ERROR_CONTENT: Record<string, string> = {
   INVALID_ORDER: "Review the checkout information and try again.",
   INVALID_CUSTOMER: "Enter a valid name and email address.",
-  INVALID_SHIPPING_ADDRESS: "Enter a valid US demo shipping address.",
+  INVALID_SHIPPING_ADDRESS: "Enter a valid US shipping address.",
   PRODUCT_OUT_OF_STOCK: "A product in your cart is now out of stock.",
   INSUFFICIENT_INVENTORY:
     "A product quantity is higher than current availability.",
   CATALOG_UNAVAILABLE: "Product availability could not be checked. Try again.",
   RATE_LIMITED: "Too many attempts. Wait briefly and try again.",
   ORDER_NOT_FOUND: "The order was not found or has expired.",
-  DEPENDENCY_UNAVAILABLE: "The demo service is temporarily unavailable.",
+  DEPENDENCY_UNAVAILABLE: "The order service is temporarily unavailable.",
 };
 
 export const ORDER_STATUS_CONTENT = {
   confirmed: {
     label: "Confirmed",
-    description: "The demo order was accepted and priced by the order service.",
+    description: "The order was accepted and priced by the order service.",
   },
 } as const;
 

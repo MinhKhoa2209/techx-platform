@@ -279,7 +279,7 @@ function parseOrder(body: unknown): CreateOrderInput {
     throw new HttpError(
       400,
       "INVALID_SHIPPING_ADDRESS",
-      "Only US demo addresses are supported.",
+      "Only US shipping addresses are supported.",
     );
   }
   const line2 =

@@ -24,6 +24,30 @@ export const EMPTY_CHECKOUT_FORM: CheckoutForm = {
   postalCode: "",
 };
 
+type CheckoutCrypto = Pick<Crypto, "getRandomValues"> &
+  Partial<Pick<Crypto, "randomUUID">>;
+
+export function createIdempotencyKey(
+  cryptoApi: CheckoutCrypto | undefined = globalThis.crypto,
+): string {
+  if (typeof cryptoApi?.randomUUID === "function") {
+    return cryptoApi.randomUUID();
+  }
+
+  const values = new Uint32Array(4);
+  if (cryptoApi?.getRandomValues) {
+    cryptoApi.getRandomValues(values);
+  } else {
+    for (let index = 0; index < values.length; index += 1) {
+      values[index] = Math.floor(Math.random() * 0xffffffff);
+    }
+  }
+  const randomPart = Array.from(values, (value) =>
+    value.toString(16).padStart(8, "0"),
+  ).join("");
+  return `checkout-${Date.now().toString(36)}-${randomPart}`;
+}
+
 export function validateCheckout(form: CheckoutForm): CheckoutErrors {
   const errors: CheckoutErrors = {};
   const name = form.name.trim();

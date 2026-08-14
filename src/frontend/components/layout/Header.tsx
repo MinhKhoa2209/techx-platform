@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import CartDropdown from "@/components/cart/CartDropdown";
+import BrandLogo from "@/components/layout/BrandLogo";
 import Icon from "@/components/ui/Icon";
 import { useCart } from "@/lib/CartContext";
 import {
@@ -11,9 +12,7 @@ import {
   CONTENT,
   NAVIGATION,
   ROUTES,
-  SITE,
   UI_LIMITS,
-  UI_STORAGE_KEYS,
 } from "@/lib/site-config";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 
@@ -24,17 +23,9 @@ export default function Header() {
   const [query, setQuery] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [noticeVisible, setNoticeVisible] = useState(false);
   const cartRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    setNoticeVisible(
-      window.sessionStorage.getItem(UI_STORAGE_KEYS.demoNoticeDismissed) !==
-        "true",
-    );
-  }, []);
 
   useEffect(() => {
     setCartOpen(false);
@@ -60,28 +51,11 @@ export default function Header() {
     else router.push(ROUTES.products);
   }
 
-  function dismissNotice() {
-    window.sessionStorage.setItem(UI_STORAGE_KEYS.demoNoticeDismissed, "true");
-    setNoticeVisible(false);
-  }
-
   return (
     <>
       <a className="skip-link" href="#main-content">
         {CONTENT.shell.skipToContent}
       </a>
-      {noticeVisible && (
-        <div className="demo-bar" role="status">
-          <span>{SITE.demoNotice}</span>
-          <button
-            type="button"
-            onClick={dismissNotice}
-            aria-label={CONTENT.shell.dismissDemoNotice}
-          >
-            <Icon name="close" size={16} />
-          </button>
-        </div>
-      )}
       <header className="site-header">
         <div className="header-inner">
           <button
@@ -99,15 +73,9 @@ export default function Header() {
           <Link
             href={ROUTES.home}
             className="brand"
-            aria-label={`${SITE.name} home`}
+            aria-label="TechX Observatory Supply home"
           >
-            <span className="brand-mark" aria-hidden="true">
-              {SITE.mark}
-            </span>
-            <span className="brand-copy">
-              <strong>{SITE.shortName}</strong>
-              <small>{SITE.brandDescriptor}</small>
-            </span>
+            <BrandLogo />
           </Link>
 
           <nav
@@ -185,7 +153,7 @@ export default function Header() {
             aria-label={CONTENT.shell.navigation}
           >
             <div className="mobile-menu-head">
-              <span>{SITE.name}</span>
+              <BrandLogo compact />
               <button
                 className="icon-button"
                 type="button"
@@ -203,7 +171,7 @@ export default function Header() {
                 </Link>
               ))}
             </nav>
-            <p>{SITE.demoNotice}</p>
+            <p>{CONTENT.shell.mobileMessage}</p>
           </div>
         </div>
       )}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BrandLogo from "@/components/layout/BrandLogo";
 import {
   CONTENT,
   NAVIGATION,
@@ -12,9 +13,7 @@ export default function Footer() {
     <footer className="site-footer">
       <div className="footer-inner">
         <section className="footer-brand" aria-labelledby="footer-brand-title">
-          <span className="brand-mark" aria-hidden="true">
-            {SITE.mark}
-          </span>
+          <BrandLogo compact />
           <div>
             <h2 id="footer-brand-title">{SITE.name}</h2>
             <p>{SITE.tagline}</p>
@@ -29,9 +28,9 @@ export default function Footer() {
           ))}
         </nav>
         <section className="footer-help" aria-labelledby="footer-help-title">
-          <h2 id="footer-help-title">{CONTENT.shell.demoInformation}</h2>
+          <h2 id="footer-help-title">{CONTENT.shell.customerCare}</h2>
           <Link href={ROUTES.orders}>{CONTENT.order.lookupTitle}</Link>
-          <p>{SITE.demoNotice}</p>
+          <p>{CONTENT.shell.checkoutNotice}</p>
         </section>
       </div>
       <div className="footer-bottom">

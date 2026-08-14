@@ -113,9 +113,9 @@ export default function CartSummary({
             <Icon name="arrow" size={18} />
           </Link>
         ))}
-      <p className="summary-demo-note">
+      <p className="summary-safety-note">
         <Icon name="shield" size={17} />
-        {CONTENT.cart.demoNote}
+        {CONTENT.cart.safetyNote}
       </p>
     </aside>
   );
