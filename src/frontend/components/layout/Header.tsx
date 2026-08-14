@@ -1,19 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import CartDropdown from "@/components/cart/CartDropdown";
 import BrandLogo from "@/components/layout/BrandLogo";
+import PrimaryNavigation from "@/components/layout/PrimaryNavigation";
 import Icon from "@/components/ui/Icon";
 import { useCart } from "@/lib/CartContext";
-import {
-  CART_BADGE_DISPLAY_LIMIT,
-  CONTENT,
-  NAVIGATION,
-  ROUTES,
-  UI_LIMITS,
-} from "@/lib/site-config";
+import { CART_BADGE_DISPLAY_LIMIT, CONTENT, ROUTES } from "@/lib/site-config";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 
 export default function Header() {
@@ -60,14 +55,6 @@ export default function Header() {
       <header
         className={`site-header${checkoutMode ? " checkout-site-header" : ""}`}
       >
-        {!checkoutMode && (
-          <div className="commerce-strip">
-            <div>
-              <span>{CONTENT.shell.deliveryMessage}</span>
-              <span>{CONTENT.shell.serviceMessage}</span>
-            </div>
-          </div>
-        )}
         <div className="header-inner">
           {!checkoutMode && (
             <button
@@ -98,6 +85,9 @@ export default function Header() {
             </div>
           ) : (
             <>
+              <Suspense fallback={<div className="desktop-nav-placeholder" />}>
+                <PrimaryNavigation />
+              </Suspense>
               <form
                 className="header-search"
                 role="search"
@@ -138,35 +128,13 @@ export default function Header() {
                     </span>
                   )}
                 </button>
-                {cartOpen && <CartDropdown onClose={() => setCartOpen(false)} />}
+                {cartOpen && (
+                  <CartDropdown onClose={() => setCartOpen(false)} />
+                )}
               </div>
             </>
           )}
         </div>
-        {!checkoutMode && (
-          <nav
-            className="desktop-nav"
-            aria-label={CONTENT.shell.primaryNavigation}
-          >
-            <div>
-              {NAVIGATION.slice(0, UI_LIMITS.desktopNavigationItems).map(
-                (item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={
-                      pathname === item.href.split("?")[0]
-                        ? "active"
-                        : undefined
-                    }
-                  >
-                    {item.label}
-                  </Link>
-                ),
-              )}
-            </div>
-          </nav>
-        )}
       </header>
 
       {!checkoutMode && menuOpen && (
@@ -196,14 +164,9 @@ export default function Header() {
                 <Icon name="close" />
               </button>
             </div>
-            <nav aria-label={CONTENT.shell.mobileNavigation}>
-              {NAVIGATION.map((item) => (
-                <Link key={item.href} href={item.href}>
-                  {item.label}
-                  <Icon name="arrow" />
-                </Link>
-              ))}
-            </nav>
+            <Suspense fallback={null}>
+              <PrimaryNavigation mobile />
+            </Suspense>
             <p>{CONTENT.shell.mobileMessage}</p>
           </div>
         </div>

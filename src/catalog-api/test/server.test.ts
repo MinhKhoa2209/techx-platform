@@ -37,7 +37,7 @@ test("lists products and propagates a request id", async () => {
   };
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("x-request-id"), "catalog-test-request");
-  assert.equal(body.products.length, 12);
+  assert.equal(body.products.length, 24);
   assert.equal(
     body.categories.reduce((sum, category) => sum + category.count, 0),
     body.products.length,

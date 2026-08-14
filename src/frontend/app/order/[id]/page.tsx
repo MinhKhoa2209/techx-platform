@@ -6,29 +6,16 @@ import { useParams } from "next/navigation";
 import OrderDetails from "@/components/order/OrderDetails";
 import Icon from "@/components/ui/Icon";
 import { ApiClientError, getOrder } from "@/lib/api-client";
+import { findCachedOrder, saveOrderToHistory } from "@/lib/order-history";
 import {
   CONTENT,
   ORDER_ERROR_CONTENT,
   ROUTES,
-  UI_STORAGE_KEYS,
   UI_TIMINGS,
 } from "@/lib/site-config";
 import type { Order } from "@/lib/types";
 
 type LoadState = "loading" | "success" | "error";
-
-function cachedOrder(id: string): Order | null {
-  const raw = window.sessionStorage.getItem(UI_STORAGE_KEYS.lastOrder);
-  if (!raw) return null;
-  try {
-    const order = JSON.parse(raw) as Order;
-    if (order.id === id && Date.parse(order.expiresAt) > Date.now())
-      return order;
-  } catch {
-    window.sessionStorage.removeItem(UI_STORAGE_KEYS.lastOrder);
-  }
-  return null;
-}
 
 export default function OrderConfirmationPage() {
   const { id } = useParams<{ id: string }>();
@@ -43,12 +30,13 @@ export default function OrderConfirmationPage() {
     getOrder(id)
       .then(({ order: loaded }) => {
         if (!active) return;
+        saveOrderToHistory(loaded);
         setOrder(loaded);
         setState("success");
       })
       .catch((reason) => {
         if (!active) return;
-        const fallback = cachedOrder(id);
+        const fallback = findCachedOrder(id);
         if (fallback) {
           setOrder(fallback);
           setState("success");

@@ -313,5 +313,317 @@
         "alt": "Optics cleaning kit with blower, brush, cloth and solution"
       }
     ]
+  },
+  {
+    "id": "aurora-90-maksutov",
+    "sku": "TX-TEL-090",
+    "name": "Aurora 90 Maksutov",
+    "category": "telescopes",
+    "shortDescription": "Compact long-focus optics for sharp Moon and planetary detail.",
+    "description": "The Aurora 90 combines a folded optical path with a steady tabletop mount, making high-power observing easy to carry and quick to set up.",
+    "priceCents": 38900,
+    "currency": "USD",
+    "availability": "in_stock",
+    "inventoryQuantity": 9,
+    "featured": false,
+    "tags": ["moon", "planets", "compact", "maksutov"],
+    "specifications": [
+      { "label": "Aperture", "value": "90 mm" },
+      { "label": "Focal length", "value": "1,250 mm" },
+      { "label": "Mount", "value": "Tabletop alt-azimuth" },
+      { "label": "Weight", "value": "3.2 kg" }
+    ],
+    "images": [
+      {
+        "src": "/products/aurora-90-maksutov.webp",
+        "alt": "Aurora 90 compact Maksutov telescope on its tabletop mount"
+      }
+    ]
+  },
+  {
+    "id": "deepsky-130-dobsonian",
+    "sku": "TX-TEL-130",
+    "name": "DeepSky 130 Dobsonian",
+    "category": "telescopes",
+    "shortDescription": "A bright, wide reflector for nebulae, clusters and detailed lunar views.",
+    "description": "A 130 mm parabolic mirror and smooth Dobsonian base give the DeepSky 130 strong visual performance without a complicated setup.",
+    "priceCents": 45900,
+    "currency": "USD",
+    "availability": "in_stock",
+    "inventoryQuantity": 8,
+    "featured": true,
+    "tags": ["deep sky", "dobsonian", "visual", "parabolic mirror"],
+    "specifications": [
+      { "label": "Aperture", "value": "130 mm" },
+      { "label": "Focal length", "value": "650 mm" },
+      { "label": "Mount", "value": "Dobsonian" },
+      { "label": "Weight", "value": "9.4 kg" }
+    ],
+    "images": [
+      {
+        "src": "/products/deepsky-130-dobsonian.webp",
+        "alt": "DeepSky 130 reflector telescope on a Dobsonian base"
+      }
+    ]
+  },
+  {
+    "id": "solis-60-solar-scope",
+    "sku": "TX-TEL-S60",
+    "name": "Solis 60 Solar Scope",
+    "category": "telescopes",
+    "shortDescription": "A dedicated filtered telescope for safe views of solar activity.",
+    "description": "The Solis 60 is built only for solar observing, with an integrated hydrogen-alpha filter system that reveals prominences and surface structure.",
+    "priceCents": 89900,
+    "currency": "USD",
+    "availability": "in_stock",
+    "inventoryQuantity": 6,
+    "featured": false,
+    "tags": ["solar", "hydrogen alpha", "daytime", "dedicated filter"],
+    "specifications": [
+      { "label": "Aperture", "value": "60 mm" },
+      { "label": "Bandpass", "value": "Less than 0.7 Å" },
+      { "label": "Mount", "value": "Tracking tripod" },
+      { "label": "Intended use", "value": "Solar only" }
+    ],
+    "images": [
+      {
+        "src": "/products/solis-60-solar-scope.webp",
+        "alt": "Solis 60 dedicated solar telescope on a tracking tripod"
+      }
+    ]
+  },
+  {
+    "id": "apex-72-ed-astrograph",
+    "sku": "TX-TEL-072ED",
+    "name": "Apex 72 ED Astrograph",
+    "category": "telescopes",
+    "shortDescription": "A color-corrected travel refractor made for wide-field imaging.",
+    "description": "FPL-53 glass, a fast focal ratio and a smooth dual-speed focuser make the Apex 72 a capable compact platform for camera-based sky exploration.",
+    "priceCents": 74900,
+    "currency": "USD",
+    "availability": "low_stock",
+    "inventoryQuantity": 3,
+    "featured": true,
+    "tags": ["astrograph", "ed glass", "imaging", "travel"],
+    "specifications": [
+      { "label": "Aperture", "value": "72 mm" },
+      { "label": "Focal length", "value": "420 mm" },
+      { "label": "Glass", "value": "FPL-53 ED" },
+      { "label": "Focuser", "value": "2.5-inch dual speed" }
+    ],
+    "images": [
+      {
+        "src": "/products/apex-72-ed-astrograph.webp",
+        "alt": "Apex 72 ED compact white astrograph refractor"
+      }
+    ]
+  },
+  {
+    "id": "summit-10x42-binoculars",
+    "sku": "TX-BIN-1042",
+    "name": "Summit 10×42 Binoculars",
+    "category": "binoculars",
+    "shortDescription": "High-detail roof-prism binoculars for distant wildlife and open skies.",
+    "description": "The Summit balances 10× reach with a bright 42 mm objective, phase-corrected prisms and a comfortable weather-sealed grip.",
+    "priceCents": 18900,
+    "currency": "USD",
+    "availability": "in_stock",
+    "inventoryQuantity": 16,
+    "featured": false,
+    "tags": ["roof prism", "wildlife", "weatherproof", "detail"],
+    "specifications": [
+      { "label": "Magnification", "value": "10×" },
+      { "label": "Objective", "value": "42 mm" },
+      { "label": "Prism", "value": "Phase-corrected BaK-4" },
+      { "label": "Weather sealing", "value": "IPX7" }
+    ],
+    "images": [
+      {
+        "src": "/products/summit-10x42-binoculars.webp",
+        "alt": "Summit 10 by 42 premium roof-prism binoculars"
+      }
+    ]
+  },
+  {
+    "id": "mariner-7x50-binoculars",
+    "sku": "TX-BIN-750",
+    "name": "Mariner 7×50 Binoculars",
+    "category": "binoculars",
+    "shortDescription": "Waterproof marine optics with a bright, stable low-light view.",
+    "description": "A wide exit pupil, floating rubber armor and an integrated compass make the Mariner dependable on boats, coastlines and dark campsites.",
+    "priceCents": 17900,
+    "currency": "USD",
+    "availability": "in_stock",
+    "inventoryQuantity": 12,
+    "featured": false,
+    "tags": ["marine", "waterproof", "compass", "low light"],
+    "specifications": [
+      { "label": "Magnification", "value": "7×" },
+      { "label": "Objective", "value": "50 mm" },
+      { "label": "Compass", "value": "Integrated illuminated" },
+      { "label": "Waterproofing", "value": "Nitrogen filled" }
+    ],
+    "images": [
+      {
+        "src": "/products/mariner-7x50-binoculars.webp",
+        "alt": "Mariner waterproof 7 by 50 binoculars with integrated compass"
+      }
+    ]
+  },
+  {
+    "id": "stargazer-15x70-binoculars",
+    "sku": "TX-BIN-1570",
+    "name": "Stargazer 15×70 Binoculars",
+    "category": "binoculars",
+    "shortDescription": "Large-aperture binoculars for sweeping star fields and bright nebulae.",
+    "description": "The Stargazer gathers more light with 70 mm objectives and includes a tripod adapter for steady, comfortable astronomy sessions.",
+    "priceCents": 22900,
+    "currency": "USD",
+    "availability": "low_stock",
+    "inventoryQuantity": 5,
+    "featured": true,
+    "tags": ["astronomy", "large aperture", "tripod ready", "star fields"],
+    "specifications": [
+      { "label": "Magnification", "value": "15×" },
+      { "label": "Objective", "value": "70 mm" },
+      { "label": "Prism", "value": "BaK-4 Porro" },
+      { "label": "Tripod adapter", "value": "Included" }
+    ],
+    "images": [
+      {
+        "src": "/products/stargazer-15x70-binoculars.webp",
+        "alt": "Stargazer large 15 by 70 astronomy binoculars"
+      }
+    ]
+  },
+  {
+    "id": "comet-2x54-starfield-binoculars",
+    "sku": "TX-BIN-254",
+    "name": "Comet 2×54 Starfield Binoculars",
+    "category": "binoculars",
+    "shortDescription": "An ultra-wide view that reveals more stars without narrowing the sky.",
+    "description": "Low 2× magnification and large objectives create a natural, immersive view for constellations, meteor showers and orientation under dark skies.",
+    "priceCents": 14900,
+    "currency": "USD",
+    "availability": "in_stock",
+    "inventoryQuantity": 14,
+    "featured": false,
+    "tags": ["ultra wide", "constellations", "meteor showers", "compact"],
+    "specifications": [
+      { "label": "Magnification", "value": "2×" },
+      { "label": "Objective", "value": "54 mm" },
+      { "label": "Focus", "value": "Individual eyepiece" },
+      { "label": "Use", "value": "Wide-field astronomy" }
+    ],
+    "images": [
+      {
+        "src": "/products/comet-2x54-starfield-binoculars.webp",
+        "alt": "Comet compact ultra-wide 2 by 54 starfield binoculars"
+      }
+    ]
+  },
+  {
+    "id": "universal-phone-adapter",
+    "sku": "TX-ACC-PHN",
+    "name": "Universal Smartphone Adapter",
+    "category": "accessories",
+    "shortDescription": "Align a phone camera with an eyepiece for simple Moon photos.",
+    "description": "Independent fine controls center most smartphone cameras over 1.25-inch and 2-inch eyepieces without blocking access to the screen.",
+    "priceCents": 3900,
+    "currency": "USD",
+    "availability": "in_stock",
+    "inventoryQuantity": 32,
+    "featured": false,
+    "tags": ["smartphone", "photography", "adapter", "moon"],
+    "specifications": [
+      { "label": "Phone width", "value": "55–95 mm" },
+      { "label": "Eyepiece diameter", "value": "25–62 mm" },
+      { "label": "Adjustment", "value": "Three axis" },
+      { "label": "Material", "value": "Aluminum and polymer" }
+    ],
+    "images": [
+      {
+        "src": "/products/universal-phone-adapter.webp",
+        "alt": "Universal smartphone camera adapter attached to a telescope eyepiece"
+      }
+    ]
+  },
+  {
+    "id": "dew-heater-band",
+    "sku": "TX-ACC-DEW",
+    "name": "Dew Heater Band",
+    "category": "accessories",
+    "shortDescription": "Gentle controlled heat keeps front optics clear on damp nights.",
+    "description": "A soft adjustable band wraps around common telescope tubes and uses a compact USB controller to reduce dew without excessive heat.",
+    "priceCents": 4900,
+    "currency": "USD",
+    "availability": "in_stock",
+    "inventoryQuantity": 24,
+    "featured": false,
+    "tags": ["dew control", "usb", "weather", "imaging"],
+    "specifications": [
+      { "label": "Fit", "value": "60–110 mm tubes" },
+      { "label": "Power", "value": "USB 5 V" },
+      { "label": "Control", "value": "Three heat levels" },
+      { "label": "Cable length", "value": "1.8 m" }
+    ],
+    "images": [
+      {
+        "src": "/products/dew-heater-band.webp",
+        "alt": "Flexible telescope dew heater band with USB controller"
+      }
+    ]
+  },
+  {
+    "id": "star-map-planisphere",
+    "sku": "TX-ACC-MAP",
+    "name": "Star Map Planisphere",
+    "category": "accessories",
+    "shortDescription": "A simple rotating sky guide that works without a screen or signal.",
+    "description": "Set the date and time to identify visible constellations, bright stars and seasonal sky patterns from mid-northern locations.",
+    "priceCents": 1600,
+    "currency": "USD",
+    "availability": "in_stock",
+    "inventoryQuantity": 54,
+    "featured": false,
+    "tags": ["star map", "beginner", "constellations", "field guide"],
+    "specifications": [
+      { "label": "Latitude range", "value": "30–50° north" },
+      { "label": "Diameter", "value": "24 cm" },
+      { "label": "Finish", "value": "Dew-resistant laminate" },
+      { "label": "Light", "value": "Red-light readable" }
+    ],
+    "images": [
+      {
+        "src": "/products/star-map-planisphere.webp",
+        "alt": "Rotating circular star map planisphere with constellation markings"
+      }
+    ]
+  },
+  {
+    "id": "folding-observer-chair",
+    "sku": "TX-ACC-CHR",
+    "name": "Folding Observer Chair",
+    "category": "accessories",
+    "shortDescription": "Stable adjustable seating for relaxed views at changing eyepiece heights.",
+    "description": "A padded seat moves quickly along a tall folding frame, helping observers stay steady and comfortable from horizon to zenith.",
+    "priceCents": 12900,
+    "currency": "USD",
+    "availability": "in_stock",
+    "inventoryQuantity": 10,
+    "featured": false,
+    "tags": ["comfort", "chair", "adjustable", "field"],
+    "specifications": [
+      { "label": "Seat height", "value": "46–82 cm" },
+      { "label": "Load capacity", "value": "120 kg" },
+      { "label": "Frame", "value": "Powder-coated steel" },
+      { "label": "Folded depth", "value": "15 cm" }
+    ],
+    "images": [
+      {
+        "src": "/products/folding-observer-chair.webp",
+        "alt": "Adjustable folding astronomy observer chair with padded seat"
+      }
+    ]
   }
 ]

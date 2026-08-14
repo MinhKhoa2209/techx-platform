@@ -5,8 +5,8 @@ import { buildCategories, validateProducts } from "../src/catalog.js";
 
 test("validates the complete v2 seed and derives category facets", () => {
   const products = validateProducts(productsJson);
-  assert.equal(products.length, 12);
-  assert.equal(products.filter((product) => product.featured).length, 4);
+  assert.equal(products.length, 24);
+  assert.equal(products.filter((product) => product.featured).length, 7);
   assert.equal(
     products.filter((product) => product.compareAtPriceCents !== undefined)
       .length,
@@ -20,9 +20,9 @@ test("validates the complete v2 seed and derives category facets", () => {
   assert.deepEqual(
     buildCategories(products).map(({ id, count }) => ({ id, count })),
     [
-      { id: "telescopes", count: 4 },
-      { id: "binoculars", count: 3 },
-      { id: "accessories", count: 5 },
+      { id: "telescopes", count: 8 },
+      { id: "binoculars", count: 7 },
+      { id: "accessories", count: 9 },
     ],
   );
 });

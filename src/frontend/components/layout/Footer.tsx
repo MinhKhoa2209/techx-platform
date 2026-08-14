@@ -12,12 +12,9 @@ export default function Footer() {
   return (
     <footer className="site-footer">
       <div className="footer-inner">
-        <section className="footer-brand" aria-labelledby="footer-brand-title">
-          <BrandLogo compact />
-          <div>
-            <h2 id="footer-brand-title">{SITE.name}</h2>
-            <p>{SITE.tagline}</p>
-          </div>
+        <section className="footer-brand" aria-label={SITE.name}>
+          <BrandLogo />
+          <p>{SITE.tagline}</p>
         </section>
         <nav className="footer-nav" aria-label={CONTENT.shell.footerNavigation}>
           <h2>{CONTENT.shell.footerShop}</h2>

@@ -17,6 +17,7 @@ import {
   type CheckoutForm,
 } from "@/lib/checkout";
 import { hasUnavailableItems } from "@/lib/cart";
+import { saveOrderToHistory } from "@/lib/order-history";
 import { useCart } from "@/lib/CartContext";
 import {
   CHECKOUT_FIELDS,
@@ -123,6 +124,7 @@ export default function CheckoutPage() {
         UI_STORAGE_KEYS.lastOrder,
         JSON.stringify(order),
       );
+      saveOrderToHistory(order);
       clearCart();
       router.push(ROUTES.order(order.id));
     } catch (error) {

@@ -23,6 +23,7 @@ export const SITE = {
 
 export const UI_STORAGE_KEYS = {
   lastOrder: "techx-last-order-v2",
+  orderHistory: "techx-order-history-v1",
 } as const;
 
 export const NAVIGATION = [
@@ -133,15 +134,15 @@ export const CONTENT = {
     searchPlaceholder: "Search telescopes, binoculars and accessories",
     orderLookup: "Track order",
     cart: "Cart",
-    deliveryMessage: "Free standard delivery on qualifying orders",
-    serviceMessage: "Expert-selected optics · Clear product guidance",
     secureCheckout: "Secure checkout · No card details requested",
     cartLabel: (count: number) => `Cart with ${count} items`,
     footerShop: "Shop",
     customerCare: "Customer care",
-    checkoutNotice: "Checkout does not request card details or arrange shipment.",
+    checkoutNotice:
+      "Checkout does not request card details or arrange shipment.",
     mobileMessage: "Expertly selected optics for clear nights and open trails.",
-    temporaryOrders: "Independent product experience · Order records are temporary",
+    temporaryOrders:
+      "Independent product experience · Order records are temporary",
   },
   home: {
     eyebrow: "Astronomy gear for curious nights",
@@ -235,8 +236,7 @@ export const CONTENT = {
     notFoundBody:
       "The product may have moved or no longer belongs to this catalog.",
     save: (percent: number) => `Save ${percent}%`,
-    lowStock: (count: number) =>
-      `Only ${count} available.`,
+    lowStock: (count: number) => `Only ${count} available.`,
     quantityFor: (name: string) => `Quantity for ${name}`,
     viewImage: (index: number) => `View image ${index}`,
     deliveryLoading: "Delivery details loading",
@@ -276,7 +276,8 @@ export const CONTENT = {
     contact: "Contact",
     shipping: "Shipping address",
     review: "Review order",
-    intro: "Complete your contact and delivery details, then review the order before placing it.",
+    intro:
+      "Complete your contact and delivery details, then review the order before placing it.",
     assuranceTitle: "No card details required",
     assuranceBody:
       "This project records the order flow only. It does not charge a card or arrange shipment.",
@@ -328,6 +329,13 @@ export const CONTENT = {
     lookupAnOrder: "Look up an order",
     lookingUp: "Looking up…",
     ttlHelp: "Orders are available only until their server-side TTL expires.",
+    searchTitle: "Find an order by ID",
+    historyTitle: "Order history",
+    historyBody: "Orders placed in this browser appear here for quick access.",
+    historyEmpty: "No orders have been placed in this browser yet.",
+    viewDetails: "View details",
+    historyCount: (count: number) =>
+      `${count} ${count === 1 ? "item" : "items"}`,
   },
 } as const;
 
