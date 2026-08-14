@@ -26,6 +26,7 @@ export default function Header() {
   const cartRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const checkoutMode = pathname === ROUTES.checkout;
 
   useEffect(() => {
     setCartOpen(false);
@@ -56,19 +57,31 @@ export default function Header() {
       <a className="skip-link" href="#main-content">
         {CONTENT.shell.skipToContent}
       </a>
-      <header className="site-header">
+      <header
+        className={`site-header${checkoutMode ? " checkout-site-header" : ""}`}
+      >
+        {!checkoutMode && (
+          <div className="commerce-strip">
+            <div>
+              <span>{CONTENT.shell.deliveryMessage}</span>
+              <span>{CONTENT.shell.serviceMessage}</span>
+            </div>
+          </div>
+        )}
         <div className="header-inner">
-          <button
-            ref={menuButtonRef}
-            className="icon-button mobile-menu-button"
-            type="button"
-            aria-label={CONTENT.shell.openNavigation}
-            aria-expanded={menuOpen}
-            aria-controls="mobile-navigation"
-            onClick={() => setMenuOpen(true)}
-          >
-            <Icon name="menu" />
-          </button>
+          {!checkoutMode && (
+            <button
+              ref={menuButtonRef}
+              className="icon-button mobile-menu-button"
+              type="button"
+              aria-label={CONTENT.shell.openNavigation}
+              aria-expanded={menuOpen}
+              aria-controls="mobile-navigation"
+              onClick={() => setMenuOpen(true)}
+            >
+              <Icon name="menu" />
+            </button>
+          )}
 
           <Link
             href={ROUTES.home}
@@ -78,65 +91,85 @@ export default function Header() {
             <BrandLogo />
           </Link>
 
+          {checkoutMode ? (
+            <div className="checkout-header-message">
+              <Icon name="shield" size={20} />
+              <span>{CONTENT.shell.secureCheckout}</span>
+            </div>
+          ) : (
+            <>
+              <form
+                className="header-search"
+                role="search"
+                onSubmit={submitSearch}
+              >
+                <label className="sr-only" htmlFor="header-search">
+                  {CONTENT.shell.searchProducts}
+                </label>
+                <Icon name="search" size={18} />
+                <input
+                  id="header-search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder={CONTENT.shell.searchPlaceholder}
+                  type="search"
+                />
+              </form>
+
+              <div className="header-actions" ref={cartRef}>
+                <Link className="order-link" href={ROUTES.orders}>
+                  <Icon name="package" size={19} />
+                  <span>{CONTENT.shell.orderLookup}</span>
+                </Link>
+                <button
+                  className="cart-button"
+                  type="button"
+                  aria-label={CONTENT.shell.cartLabel(itemCount)}
+                  aria-expanded={cartOpen}
+                  onClick={() => setCartOpen((open) => !open)}
+                >
+                  <Icon name="cart" size={21} />
+                  <span>{CONTENT.shell.cart}</span>
+                  {itemCount > 0 && (
+                    <span className="cart-count">
+                      {itemCount > CART_BADGE_DISPLAY_LIMIT
+                        ? `${CART_BADGE_DISPLAY_LIMIT}+`
+                        : itemCount}
+                    </span>
+                  )}
+                </button>
+                {cartOpen && <CartDropdown onClose={() => setCartOpen(false)} />}
+              </div>
+            </>
+          )}
+        </div>
+        {!checkoutMode && (
           <nav
             className="desktop-nav"
             aria-label={CONTENT.shell.primaryNavigation}
           >
-            {NAVIGATION.slice(0, UI_LIMITS.desktopNavigationItems).map(
-              (item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={
-                    pathname === item.href.split("?")[0] ? "active" : undefined
-                  }
-                >
-                  {item.label}
-                </Link>
-              ),
-            )}
-          </nav>
-
-          <form className="header-search" role="search" onSubmit={submitSearch}>
-            <label className="sr-only" htmlFor="header-search">
-              {CONTENT.shell.searchProducts}
-            </label>
-            <Icon name="search" size={17} />
-            <input
-              id="header-search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={CONTENT.shell.searchPlaceholder}
-              type="search"
-            />
-          </form>
-
-          <div className="header-actions" ref={cartRef}>
-            <Link className="order-link" href={ROUTES.orders}>
-              {CONTENT.shell.orderLookup}
-            </Link>
-            <button
-              className="icon-button cart-button"
-              type="button"
-              aria-label={CONTENT.shell.cartLabel(itemCount)}
-              aria-expanded={cartOpen}
-              onClick={() => setCartOpen((open) => !open)}
-            >
-              <Icon name="cart" />
-              {itemCount > 0 && (
-                <span className="cart-count">
-                  {itemCount > CART_BADGE_DISPLAY_LIMIT
-                    ? `${CART_BADGE_DISPLAY_LIMIT}+`
-                    : itemCount}
-                </span>
+            <div>
+              {NAVIGATION.slice(0, UI_LIMITS.desktopNavigationItems).map(
+                (item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={
+                      pathname === item.href.split("?")[0]
+                        ? "active"
+                        : undefined
+                    }
+                  >
+                    {item.label}
+                  </Link>
+                ),
               )}
-            </button>
-            {cartOpen && <CartDropdown onClose={() => setCartOpen(false)} />}
-          </div>
-        </div>
+            </div>
+          </nav>
+        )}
       </header>
 
-      {menuOpen && (
+      {!checkoutMode && menuOpen && (
         <div className="mobile-menu-layer">
           <button
             type="button"

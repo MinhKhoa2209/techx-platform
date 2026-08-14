@@ -62,6 +62,14 @@ export default function ProductCard({ product }: { product: Product }) {
           <Link href={ROUTES.product(product.id)}>{product.name}</Link>
         </h3>
         <p>{product.shortDescription}</p>
+        <dl className="product-card-specs">
+          {product.specifications.slice(0, 2).map((specification) => (
+            <div key={specification.label}>
+              <dt>{specification.label}</dt>
+              <dd>{specification.value}</dd>
+            </div>
+          ))}
+        </dl>
         <div className="product-price-row">
           <strong>{formatUsd(product.priceCents)}</strong>
           {product.compareAtPriceCents && (

@@ -10,7 +10,9 @@ export default function BrandLogo({ compact = false }: { compact?: boolean }) {
         </svg>
       </span>
       <span className="brand-copy">
-        <strong>TechX</strong>
+        <strong>
+          Tech<span>X</span>
+        </strong>
         {!compact && <small>Observatory Supply</small>}
       </span>
     </span>

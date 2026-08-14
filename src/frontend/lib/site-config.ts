@@ -26,7 +26,7 @@ export const UI_STORAGE_KEYS = {
 } as const;
 
 export const NAVIGATION = [
-  { label: "Shop", href: ROUTES.products },
+  { label: "Shop all", href: ROUTES.products },
   { label: "Telescopes", href: ROUTES.category("telescopes") },
   { label: "Binoculars", href: ROUTES.category("binoculars") },
   { label: "Accessories", href: ROUTES.category("accessories") },
@@ -130,8 +130,12 @@ export const CONTENT = {
     mobileNavigation: "Mobile navigation",
     footerNavigation: "Footer navigation",
     searchProducts: "Search products",
-    searchPlaceholder: "Search gear",
+    searchPlaceholder: "Search telescopes, binoculars and accessories",
     orderLookup: "Track order",
+    cart: "Cart",
+    deliveryMessage: "Free standard delivery on qualifying orders",
+    serviceMessage: "Expert-selected optics · Clear product guidance",
+    secureCheckout: "Secure checkout · No card details requested",
     cartLabel: (count: number) => `Cart with ${count} items`,
     footerShop: "Shop",
     customerCare: "Customer care",
