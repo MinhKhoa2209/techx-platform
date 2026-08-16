@@ -1666,6 +1666,10 @@ h3 {
 }
 
 .cart-item-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  align-self: center;
   overflow: hidden;
   border-radius: 11px;
   background: var(--cream-100);
@@ -1673,8 +1677,9 @@ h3 {
 
 .cart-item-image img {
   width: 100%;
-  aspect-ratio: 4 / 3;
+  height: 100%;
   object-fit: cover;
+  object-position: center;
 }
 
 .cart-item-sku {

@@ -32,8 +32,11 @@ change.
 | Order store          | In-memory, TTL `3600000` ms, maximum `1000` records; restart intentionally loses orders and idempotency records                                                                                  |
 | Pricing              | Catalog price snapshot; shipping `999` cents below subtotal `5000`, otherwise free; `totalCents = subtotalCents + shippingCents`                                                                 |
 | Images               | `058114477594.dkr.ecr.us-east-1.amazonaws.com/techx/frontend:demo-{short-sha}`, `.../techx/catalog:demo-{short-sha}`, `.../techx/order:demo-{short-sha}`                                         |
-| Exposure             | Exactly one temporary public HTTP ALB routes to frontend/BFF; Catalog, Order, Argo CD, and any administrative UI remain private `ClusterIP` services                                             |
-| Public URL           | `http://{alb-dns-name}/`; no custom domain and no public observability URL                                                                                                                       |
+| Exposure             | CloudFront is the only public entry point and reaches one internal ALB through a VPC origin; Catalog, Order, and Argo CD remain `ClusterIP` services                                             |
+| Public URL           | `https://shop.dinhminhkhoa.id.vn/`; public `/argocd` and `/argocd/*` return `403`                                                                                                                |
+| Private operator URL | The same hostname resolves to the internal ALB over AWS Client VPN; Argo CD is available only at `https://shop.dinhminhkhoa.id.vn/argocd/`                                                       |
+| DNS and TLS          | Cloudflare owns public DNS, Route 53 provides the private split-view record, and one issued ACM certificate covers the storefront hostname                                                       |
+| Network boundary     | One internal ALB serves frontend and Argo CD; only CloudFront may use HTTP `80`, only the Client VPN association security group may use HTTPS `443`                                              |
 
 The browser talks only to same-origin frontend routes. `ORDER_API_KEY` remains
 server-side and is added by the frontend BFF when it calls Order API.
@@ -174,6 +177,19 @@ request ID in Order logs, checks that logs do not expose the API key, forces a
 Catalog outage and bounded `503`, verifies recovery, then proves the documented
 loss of an existing order across an Order restart.
 None of these commands contacts AWS or creates a billable cloud resource.
+
+After a reviewed foundation apply creates the immutable ECR repositories, only
+a clean, committed worktree may publish the three `linux/amd64` images. The
+guarded helper verifies the AWS account, refuses an existing immutable tag, and
+returns the tag plus registry digests without changing Git:
+
+```powershell
+./scripts/publish-ecr-images.ps1 -ExpectedAccountId '<12-digit-account-id>'
+```
+
+Use the returned `demo-<12-character-commit>` tag in the reviewed chart values
+before Argo CD sync. Image publication is an AWS mutation and is run only inside
+the approved foundation window.
 
 ## Attribution
 

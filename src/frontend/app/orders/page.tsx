@@ -11,6 +11,7 @@ import { readOrderHistory, saveOrderToHistory } from "@/lib/order-history";
 import {
   CONTENT,
   ORDER_ERROR_CONTENT,
+  ORDER_STATUS_CONTENT,
   ROUTES,
   UI_TIMINGS,
 } from "@/lib/site-config";
@@ -143,7 +144,9 @@ export default function OrdersPage() {
                   <Icon name="package" size={20} />
                 </div>
                 <div className="order-history-main">
-                  <span className="badge badge-success">Confirmed</span>
+                  <span className="badge badge-success">
+                    {ORDER_STATUS_CONTENT[item.status].label}
+                  </span>
                   <h3>{item.id}</h3>
                   <p>
                     {formatDateTime(item.createdAt)} ·{" "}

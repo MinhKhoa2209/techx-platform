@@ -8,7 +8,12 @@ import BrandLogo from "@/components/layout/BrandLogo";
 import PrimaryNavigation from "@/components/layout/PrimaryNavigation";
 import Icon from "@/components/ui/Icon";
 import { useCart } from "@/lib/CartContext";
-import { CART_BADGE_DISPLAY_LIMIT, CONTENT, ROUTES } from "@/lib/site-config";
+import {
+  CART_BADGE_DISPLAY_LIMIT,
+  CONTENT,
+  ROUTES,
+  SITE,
+} from "@/lib/site-config";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 
 export default function Header() {
@@ -73,7 +78,7 @@ export default function Header() {
           <Link
             href={ROUTES.home}
             className="brand"
-            aria-label="TechX Observatory Supply home"
+            aria-label={`${SITE.name} ${CONTENT.common.home}`}
           >
             <BrandLogo />
           </Link>

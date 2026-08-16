@@ -14,8 +14,9 @@ $required = @(
   'src/frontend/README.md',
   'src/frontend/package.json',
   'src/catalog-api/README.md',
-  'src/order-api/README.md'
-  'scripts/container-resilience.ps1'
+  'src/order-api/README.md',
+  'scripts/container-resilience.ps1',
+  'scripts/publish-ecr-images.ps1'
 )
 
 foreach ($path in $required) {
@@ -34,6 +35,13 @@ if (-not (Test-Path -LiteralPath 'node_modules')) {
 }
 
 & "$PSScriptRoot\ui-hardcode-audit.ps1"
+
+$tokens = $null
+$parseErrors = $null
+[System.Management.Automation.Language.Parser]::ParseFile(
+  (Join-Path $PSScriptRoot 'publish-ecr-images.ps1'), [ref]$tokens, [ref]$parseErrors
+) | Out-Null
+if ($parseErrors) { throw "publish-ecr-images.ps1 has syntax errors: $($parseErrors.Message -join '; ')" }
 
 npm run check
 if ($LASTEXITCODE -ne 0) { throw 'TypeScript verification failed.' }

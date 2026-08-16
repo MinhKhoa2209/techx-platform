@@ -181,8 +181,8 @@ export default function ProductDetailPage() {
             <div>
               <Icon name="shield" />
               <span>
-                  <strong>{CONTENT.product.checkoutTitle}</strong>
-                  {CONTENT.product.checkoutBody}
+                <strong>{CONTENT.product.checkoutTitle}</strong>
+                {CONTENT.product.checkoutBody}
               </span>
             </div>
           </div>
