@@ -42,7 +42,8 @@ $published = @()
 foreach ($name in $images.Keys) {
   $repositoryName = "techx/$name"
   $image = "${registry}/${repositoryName}:$tag"
-  docker buildx build --platform linux/amd64 --file (Join-Path $root $images[$name]) --tag $image --push $root
+  # ECR basic scanning requires an image manifest rather than an OCI index with attestations.
+  docker buildx build --platform linux/amd64 --provenance=false --file (Join-Path $root $images[$name]) --tag $image --push $root
   if ($LASTEXITCODE -ne 0) { throw "Build/push failed for $name." }
   $details = aws ecr describe-images --region $Region --repository-name $repositoryName --image-ids "imageTag=$tag" --output json | ConvertFrom-Json
   if ($LASTEXITCODE -ne 0 -or $details.imageDetails.Count -ne 1 -or -not $details.imageDetails[0].imageDigest) {
