@@ -167,4 +167,37 @@ describe("frontend BFF with real local services", () => {
     expect(response?.status).toBe(429);
     expect(Number(response?.headers.get("retry-after"))).toBeGreaterThan(0);
   });
+
+  it("uses the stable CloudFront viewer IP when origin forwarding changes", async () => {
+    let response: Response | undefined;
+    for (let index = 0; index < 21; index += 1) {
+      response = await createOrder(
+        new NextRequest("http://frontend.local/api/orders", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "idempotency-key": `cloudfront-rate-${index}`,
+            "x-forwarded-for": `10.42.3.${index + 1}`,
+            "x-techx-viewer-ip": "203.0.113.77",
+          },
+          body: JSON.stringify({
+            items: [{ productId: "stellar-70-refractor", quantity: 1 }],
+            customer: {
+              name: "CloudFront Customer",
+              email: "cloudfront@example.com",
+            },
+            shippingAddress: {
+              line1: "100 Edge Street",
+              city: "Seattle",
+              region: "WA",
+              postalCode: "98101",
+              countryCode: "US",
+            },
+            shippingMethod: "standard",
+          }),
+        }),
+      );
+    }
+    expect(response?.status).toBe(429);
+  });
 });
