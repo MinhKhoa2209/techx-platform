@@ -7,8 +7,12 @@ import { configurationError, proxyJson } from "@/lib/server/proxy";
 const limiter = new FixedWindowRateLimiter(20, 60_000);
 
 function clientKey(request: NextRequest): string {
-  const cloudFrontViewer = request.headers.get("x-techx-viewer-ip");
-  if (cloudFrontViewer?.trim()) return cloudFrontViewer.trim();
+  const cloudFrontViewer = request.headers.get("cloudfront-viewer-address");
+  if (cloudFrontViewer?.trim()) {
+    const address = cloudFrontViewer.trim();
+    const match = address.match(/^\[?(.+?)\]?:\d+$/);
+    return match?.[1] || address;
+  }
   const forwarded = request.headers.get("x-forwarded-for");
   return forwarded?.split(",")[0]?.trim() || "unknown-client";
 }

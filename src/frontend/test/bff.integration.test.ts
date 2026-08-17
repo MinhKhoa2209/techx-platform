@@ -178,7 +178,7 @@ describe("frontend BFF with real local services", () => {
             "content-type": "application/json",
             "idempotency-key": `cloudfront-rate-${index}`,
             "x-forwarded-for": `10.42.3.${index + 1}`,
-            "x-techx-viewer-ip": "203.0.113.77",
+            "cloudfront-viewer-address": `203.0.113.77:${40_000 + index}`,
           },
           body: JSON.stringify({
             items: [{ productId: "stellar-70-refractor", quantity: 1 }],
