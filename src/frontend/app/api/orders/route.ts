@@ -7,32 +7,13 @@ import { configurationError, proxyJson } from "@/lib/server/proxy";
 const limiter = new FixedWindowRateLimiter(20, 60_000);
 
 function clientKey(request: NextRequest): string {
-  const cloudFrontAsn = request.headers.get("cloudfront-viewer-asn")?.trim();
-  const country =
-    request.headers.get("cloudfront-viewer-country")?.trim() || "xx";
-  const userAgent =
-    request.headers.get("user-agent")?.trim() || "unknown-agent";
-  if (cloudFrontAsn) {
-    return `cloudfront:${cloudFrontAsn}:${country}:${userAgent}`;
-  }
-  const forwardedProto = request.headers
-    .get("x-forwarded-proto")
-    ?.split(",")
-    .at(-1)
-    ?.trim();
-  if (forwardedProto === "http") {
-    return `cloudfront-proxy:${country}:${userAgent}`;
-  }
-  const forwarded = request.headers.get("x-forwarded-for");
-  if ((forwarded?.split(",").length || 0) > 1) {
-    return `cloudfront-proxy:${country}:${userAgent}`;
-  }
   const cloudFrontViewer = request.headers.get("cloudfront-viewer-address");
   if (cloudFrontViewer?.trim()) {
     const address = cloudFrontViewer.trim();
     const match = address.match(/^\[?(.+?)\]?:\d+$/);
     return match?.[1] || address;
   }
+  const forwarded = request.headers.get("x-forwarded-for");
   return forwarded?.split(",")[0]?.trim() || "unknown-client";
 }
 

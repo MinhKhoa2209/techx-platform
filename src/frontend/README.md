@@ -18,7 +18,7 @@ and design tokens have centralized owners; production components do not embed
 product fixtures or business-rule magic values. Checkout never requests card
 details and clearly identifies itself as a non-transactional demo.
 
-The BFF applies dependency timeouts and GET retries, forwards request IDs, rate-limits order creation to 20 attempts per CloudFront network/browser cohort per minute, and maps dependency failures to structured responses. Orders remain ephemeral by design.
+The BFF applies dependency timeouts and GET retries, forwards request IDs, rate-limits order creation to 20 attempts per client per minute, and maps dependency failures to structured responses. Orders remain ephemeral by design.
 
 Local checks:
 
