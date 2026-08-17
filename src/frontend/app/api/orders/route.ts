@@ -15,6 +15,14 @@ function clientKey(request: NextRequest): string {
   if (cloudFrontAsn) {
     return `cloudfront:${cloudFrontAsn}:${country}:${userAgent}`;
   }
+  const forwardedProto = request.headers
+    .get("x-forwarded-proto")
+    ?.split(",")
+    .at(-1)
+    ?.trim();
+  if (forwardedProto === "http") {
+    return `cloudfront-proxy:${country}:${userAgent}`;
+  }
   const forwarded = request.headers.get("x-forwarded-for");
   if ((forwarded?.split(",").length || 0) > 1) {
     return `cloudfront-proxy:${country}:${userAgent}`;

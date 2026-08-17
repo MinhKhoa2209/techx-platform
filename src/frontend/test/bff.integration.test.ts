@@ -178,6 +178,7 @@ describe("frontend BFF with real local services", () => {
             "content-type": "application/json",
             "idempotency-key": `cloudfront-rate-${index}`,
             "x-forwarded-for": `198.51.${index}.20, 10.42.3.${index + 1}`,
+            "x-forwarded-proto": "http",
             "cloudfront-viewer-address": `203.0.${index}.77:${40_000 + index}`,
             "user-agent": "TechX acceptance client",
           },
