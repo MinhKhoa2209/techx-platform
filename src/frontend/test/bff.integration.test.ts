@@ -177,10 +177,8 @@ describe("frontend BFF with real local services", () => {
           headers: {
             "content-type": "application/json",
             "idempotency-key": `cloudfront-rate-${index}`,
-            "x-forwarded-for": `10.42.3.${index + 1}`,
+            "x-forwarded-for": `198.51.${index}.20, 10.42.3.${index + 1}`,
             "cloudfront-viewer-address": `203.0.${index}.77:${40_000 + index}`,
-            "cloudfront-viewer-asn": "64500",
-            "cloudfront-viewer-country": "VN",
             "user-agent": "TechX acceptance client",
           },
           body: JSON.stringify({
