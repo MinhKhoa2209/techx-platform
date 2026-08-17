@@ -168,7 +168,7 @@ describe("frontend BFF with real local services", () => {
     expect(Number(response?.headers.get("retry-after"))).toBeGreaterThan(0);
   });
 
-  it("uses the stable CloudFront viewer IP when origin forwarding changes", async () => {
+  it("uses a stable CloudFront cohort when viewer addresses rotate", async () => {
     let response: Response | undefined;
     for (let index = 0; index < 21; index += 1) {
       response = await createOrder(
@@ -178,7 +178,10 @@ describe("frontend BFF with real local services", () => {
             "content-type": "application/json",
             "idempotency-key": `cloudfront-rate-${index}`,
             "x-forwarded-for": `10.42.3.${index + 1}`,
-            "cloudfront-viewer-address": `203.0.113.77:${40_000 + index}`,
+            "cloudfront-viewer-address": `203.0.${index}.77:${40_000 + index}`,
+            "cloudfront-viewer-asn": "64500",
+            "cloudfront-viewer-country": "VN",
+            "user-agent": "TechX acceptance client",
           },
           body: JSON.stringify({
             items: [{ productId: "stellar-70-refractor", quantity: 1 }],

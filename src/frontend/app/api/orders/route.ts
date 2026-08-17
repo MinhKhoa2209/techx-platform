@@ -7,6 +7,14 @@ import { configurationError, proxyJson } from "@/lib/server/proxy";
 const limiter = new FixedWindowRateLimiter(20, 60_000);
 
 function clientKey(request: NextRequest): string {
+  const cloudFrontAsn = request.headers.get("cloudfront-viewer-asn")?.trim();
+  if (cloudFrontAsn) {
+    const country =
+      request.headers.get("cloudfront-viewer-country")?.trim() || "xx";
+    const userAgent =
+      request.headers.get("user-agent")?.trim() || "unknown-agent";
+    return `cloudfront:${cloudFrontAsn}:${country}:${userAgent}`;
+  }
   const cloudFrontViewer = request.headers.get("cloudfront-viewer-address");
   if (cloudFrontViewer?.trim()) {
     const address = cloudFrontViewer.trim();
